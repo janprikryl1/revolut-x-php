@@ -36,6 +36,7 @@ nav:
       - Order Management: guide/orders.md
       - Account & Balances: guide/account.md
       - 0% Fee Maker Strategy: guide/maker_strategy.md
+      - AI Agent Integration: guide/ai_agents.md
   - Protocol Concepts:
       - Ed25519 Authentication: concepts/auth_ed25519.md
       - Maker vs Taker Fee Model: concepts/maker_strategy.md

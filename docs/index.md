@@ -30,8 +30,16 @@ Developed as part of a Master's Thesis at **VŠB – Technical University of Ost
 - **Smart Maker Strategy (0.00% fee)** — Automatic price calculation with configurable safety offsets ensuring limit orders enter the order book as Makers (saving 0.09% Taker fees).
 - **Automated Rate Limiting** — Proactive request throttling respecting Revolut X public limits (1 req/s) with exponential backoff on HTTP 429 (`Retry-After`).
 - **Structured Exceptions** — Hierarchical error handling (`AuthenticationException`, `RateLimitException`, `ApiException`, `OrderValidationException`).
+- **AI Agent Skill** — Bundled skill for AI coding assistants (Google Antigravity, Claude, Cursor) to automate exchange workflows. See [AI Agent Integration](guide/ai_agents.md).
 
 ---
+
+## Downloads & AI Resources
+
+- **AI Agent Skill (Raw)**: [Download SKILL.md](https://raw.githubusercontent.com/janprikryl1/revolut-x-php/main/.agents/skills/revolut-x-php/SKILL.md)
+- **AI Types Reference (Raw)**: [Download types.md](https://raw.githubusercontent.com/janprikryl1/revolut-x-php/main/.agents/skills/revolut-x-php/references/types.md)
+- **Skill Folder (GitHub)**: [`.agents/skills/revolut-x-php/`](https://github.com/janprikryl1/revolut-x-php/tree/main/.agents/skills/revolut-x-php/)
+- **Repository ZIP**: [Download latest source (main.zip)](https://github.com/janprikryl1/revolut-x-php/archive/refs/heads/main.zip)
 
 ## Quick Example
 
