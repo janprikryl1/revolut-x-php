@@ -3,3 +3,4 @@ vendor/
 .phpunit.cache/
 keys/
 .DS_Store
+site/
