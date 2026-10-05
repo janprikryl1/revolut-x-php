@@ -1,54 +1,62 @@
 # Revolut X PHP SDK
-<em>PHP klientská knihovna pro REST API kryptoměnové burzy Revolut X (v1.0).</em>
+<em>PHP client library for the Revolut X Crypto Exchange REST API (v1.0).</em>
 
 ---
 
-## Přehled
-
-Tato knihovna poskytuje kompletní integraci s **Revolut X Crypto Exchange REST API (v1.0)** v moderním PHP 8.0+. Knihovna je navržena pro maximální výkon s nulovými externími runtime závislostmi, nativním Ed25519 šifrováním (`ext-sodium`) a automatickou optimalizací pro nulové poplatky (**0.00% Maker poplatek**).
-
-Knihovna vznikla v rámci diplomové práce na **VŠB – Technické univerzitě Ostrava** (FEI).
-
-- **Autor**: Bc. Jan Přikryl
-- **Balíček**: `janprikryl/revolutx`
-- **Repozitář**: [github.com/janprikryl1/revolut-x-php](https://github.com/janprikryl1/revolut-x-php)
+!!! tip "Multi-Language Ecosystem"
+    Looking for the **Python SDK**? Visit [Revolut X Python Documentation](https://janprikryl1.github.io/revolut-x-python/) or the [Python GitHub Repository](https://github.com/janprikryl1/revolut-x-python).
 
 ---
 
-## Hlavní funkce
+## Overview
 
-- **Podpora Revolut X API v1.0** — Veřejná data (tickery, kniha objednávek, svíčky), správa objednávek i účetnictví.
-- **Nativní Ed25519 šifrování** — Bleskové podepisování pomocí vestavěného rozšíření `ext-sodium`.
-- **Nulové runtime závislosti** — Využívá pouze standardní PHP rozšíření (`ext-curl`, `ext-json`, `ext-sodium`).
-- **Kompatibilita s PHP 8.0+** — Přísné typování `declare(strict_types=1);` a třídní enumy.
-- **Smart Maker Strategie** — Automatický výpočet cenových offsetů pro garantovaný **0.00% poplatek** (oproti 0.09% u Taker objednávek).
-- **Automatický rate limiting** — Respektování limitu 1 req/s a exponenciální backoff při HTTP 429 (`Retry-After`).
-- **Strukturované výjimky** — Přehledná hierarchie chyb (`AuthenticationException`, `RateLimitException`, `ApiException`, `OrderValidationException`).
+This library provides a complete, strictly typed PHP 8.0+ integration for the **Revolut X Crypto Exchange REST API (v1.0)**. It is built for maximum performance with zero external runtime dependencies, native Ed25519 cryptographic signing via `ext-sodium`, automated exchange rate-limit management, and smart order execution guaranteeing **0.00% Maker fees**.
+
+Developed as part of a Master's Thesis at **VŠB – Technical University of Ostrava** (Faculty of Electrical Engineering and Computer Science).
+
+- **Author**: Bc. Jan Přikryl
+- **Package**: [`janprikryl/revolutx`](https://packagist.org/packages/janprikryl/revolutx)
+- **Repository**: [github.com/janprikryl1/revolut-x-php](https://github.com/janprikryl1/revolut-x-php)
+- **Sister SDK (Python)**: [github.com/janprikryl1/revolut-x-python](https://github.com/janprikryl1/revolut-x-python)
 
 ---
 
-## Rychlá ukázka
+## Key Highlights
+
+- **Revolut X API v1.0 Compliance** — Full endpoint coverage: public market data, order books, OHLCV candles, order management, balances, and transaction history.
+- **Native Ed25519 Cryptography** — Fast and secure asymmetric request signing using PHP's built-in `ext-sodium`.
+- **Zero External Runtime Dependencies** — Uses only standard PHP extensions (`ext-curl`, `ext-json`, `ext-sodium`).
+- **PHP 8.0+ Compatibility** — Tested across PHP 8.0 through 8.5 with `declare(strict_types=1);` and class-based enums.
+- **Smart Maker Strategy (0.00% fee)** — Automatic price calculation with configurable safety offsets ensuring limit orders enter the order book as Makers (saving 0.09% Taker fees).
+- **Automated Rate Limiting** — Proactive request throttling respecting Revolut X public limits (1 req/s) with exponential backoff on HTTP 429 (`Retry-After`).
+- **Structured Exceptions** — Hierarchical error handling (`AuthenticationException`, `RateLimitException`, `ApiException`, `OrderValidationException`).
+
+---
+
+## Quick Example
 
 ```php
 use RevolutX\Client;
 use RevolutX\Types\OrderSide;
 use RevolutX\Types\Interval;
 
-// 1. Veřejná tržní data (bez API klíče)
+// 1. Public Market Data (No API keys required)
 $client = new Client();
 $ticker = $client->getTicker('BTC-EUR');
-echo "Cena BTC: {$ticker['last_price']} EUR\n";
+echo "BTC Price: " . $ticker['last_price'] . " EUR\n";
 
-// 2. Autentizované obchodování s 0% Maker poplatkem
+// 2. Authenticated Trading with 0.00% Maker Fee
 $client = new Client(
     apiKey: 'your-api-key',
     privateKeyPath: 'keys/private.pem'
 );
 
+// Automatically computes optimal limit price from best bid and submits post_only=true
 $order = $client->placeMakerOrder(
     symbol: 'BTC-EUR',
     side: OrderSide::BUY,
-    quoteSize: '50.00'
+    quoteSize: '50.00',
+    offset: '0.10'
 );
 echo "Order ID: " . $order['venue_order_id'] . "\n";
 ```

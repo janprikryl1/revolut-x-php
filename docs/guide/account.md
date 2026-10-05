@@ -1,35 +1,35 @@
-# PHP Průvodce: Účet a zůstatky
+# User Guide: Account & Balances
 
-Autentizované endpointy pro správu peněženek a audit transakcí.
+Authenticated endpoints for inspecting wallet balances, viewing transaction history, and auditing executed trades.
 
 ---
 
-## 1. Kontrola zůstatků
+## 1. Checking Balances
 
 ```php
 use RevolutX\Client;
 
 $client = new Client(apiKey: '...', privateKeyPath: 'keys/private.pem');
 
-// Zůstatky všech měn na účtu
+// Query balances across all account currencies
 $balances = $client->getBalances();
 
 foreach ($balances as $b) {
     if ((float)$b['total'] > 0) {
-        echo "Měna: {$b['currency']} | Dostupné: {$b['available']} | Rezervováno: {$b['reserved']}\n";
+        echo "Currency: {$b['currency']} | Available: {$b['available']} | Reserved: {$b['reserved']}\n";
     }
 }
 
-// Rychlé zjištění jedné měny
+// Quick lookup for a single currency
 $eur = $client->getBalance('EUR');
-echo "Disponibilní EUR: {$eur['available']}\n";
+echo "Available EUR: {$eur['available']}\n";
 ```
 
 ---
 
-## 2. Transakční historie (Ledger)
+## 2. Transaction Ledger History
 
-Endpoint vrací vklady, výběry, poplatky a vypořádání obchodů s podporou kurzorového stránkování:
+The transaction ledger endpoint returns deposits, withdrawals, fee charges, and trade settlements with cursor-based pagination:
 
 ```php
 $result = $client->getTransactions(limit: 20);
@@ -37,20 +37,20 @@ $transactions = $result['transactions'];
 $nextCursor = $result['next_cursor'];
 
 foreach ($transactions as $tx) {
-    echo "ID: {$tx['id']} | Typ: {$tx['type']} | Částka: {$tx['amount']}\n";
+    echo "ID: {$tx['id']} | Type: {$tx['type']} | Amount: {$tx['amount']}\n";
 }
 ```
 
 ---
 
-## 3. Historie vlastních obchodů (Private Trades)
+## 3. Private Trade History
 
-Na rozdíl od veřejných obchodů obsahuje kompletní informace o zaplacených poplatcích a exekucích:
+Unlike the public trade feed, private trades contain your executed trades with exact fee amounts and execution roles:
 
 ```php
 $history = $client->getAccountTrades('BTC-EUR', limit: 50);
 
 foreach ($history['trades'] as $trade) {
-    echo "Strana: {$trade['side']} | Cena: {$trade['price']} EUR | Objem: {$trade['quantity']}\n";
+    echo "Side: {$trade['side']} | Price: {$trade['price']} EUR | Qty: {$trade['quantity']}\n";
 }
 ```

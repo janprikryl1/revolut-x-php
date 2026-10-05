@@ -1,45 +1,48 @@
-# PHP SDK — Rychlý start
+# PHP SDK — Quick Start
 
-SDK pro PHP umožňuje plnou integraci s kryptoměnovou burzou Revolut X v moderním PHP 8.0+.
+The Revolut X PHP SDK provides complete integration with the Revolut X Crypto Exchange in modern PHP 8.0+.
 
 ---
 
-## Požadavky & Instalace
+## Requirements & Installation
 
-### Požadavky
-- PHP verze `^8.0` (8.0.30+, 8.1, 8.2, 8.3, 8.4, 8.5)
-- Rozšíření: `ext-curl`, `ext-json`, `ext-sodium`
+### Requirements
+- PHP `^8.0` (8.0.30+, 8.1, 8.2, 8.3, 8.4, 8.5)
+- Standard PHP Extensions: `ext-curl`, `ext-json`, `ext-sodium`
 
-### Instalace přes Composer
+### Installation via Composer
+
+Install the library using Composer:
 
 ```bash
 composer require janprikryl/revolutx
 ```
 
-Nebo přímé zahrnutí v monorepu:
+Or for local development:
 
 ```bash
-cd php
+git clone https://github.com/janprikryl1/revolut-x-php.git
+cd revolut-x-php
 composer install
 ```
 
 ---
 
-## Inicializace klienta
+## Client Initialization
 
-### 1. Veřejný režim (bez API klíče)
-Pro stahování tržních dat, tickerů a knihy objednávek není potřeba žádná autentizace:
+### 1. Public Mode (No API Key Required)
+For fetching market data, ticker prices, and order books, no authentication is needed:
 
 ```php
 use RevolutX\Client;
 
 $client = new Client();
 $ticker = $client->getTicker('BTC-EUR');
-echo "Aktuální cena BTC: {$ticker['last_price']} EUR\n";
+echo "Current BTC Price: {$ticker['last_price']} EUR\n";
 ```
 
-### 2. Autentizovaný režim (obchodování & účet)
-Pro zadávání objednávek a přístup k peněžence předejte API klíč a cestu k privátnímu klíči:
+### 2. Authenticated Mode (Trading & Account Data)
+For placing orders and inspecting balances, provide your API key and private key:
 
 ```php
 use RevolutX\Client;
@@ -55,16 +58,17 @@ print_r($balances);
 
 ---
 
-## Konfigurační parametry
+## Configuration Options
 
-Při vytváření instance `Client` lze přizpůsobit následující volby:
+When creating an instance of `Client`, the following constructor parameters are available:
 
-| Parametr | Typ | Výchozí hodnota | Popis |
+| Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `apiKey` | `?string` | `null` | Váš Revolut X API klíč. |
-| `privateKeyPath` | `?string` | `null` | Cesta k souboru s Ed25519 privátním klíčem (`.pem`). |
-| `privateKeyBytes` | `?string` | `null` | Přímo obsah PEM souboru nebo binární bajty klíče. |
-| `baseUrl` | `string` | `'https://revx.revolut.com/api'` | Kořenová URL adresa API. |
-| `requestDelay` | `float` | `0.85` | Minimální prodleva mezi požadavky v sekundách (ochrana před rate-limitem). |
-| `timeout` | `int` | `15` | Timeout pro cURL v sekundách. |
-| `maxRetries` | `int` | `3` | Maximální počet opakování při chybách 429 a 5xx. |
+| `apiKey` | `?string` | `null` | Your Revolut X API key from account settings. |
+| `privateKeyPath` | `?string` | `null` | Path to your Ed25519 private key file (`.pem`). |
+| `privateKeyBytes` | `?string` | `null` | Raw PEM string or binary Ed25519 key bytes. |
+| `baseUrl` | `string` | `'https://revx.revolut.com/api'` | API base URL. |
+| `apiVersion` | `string` | `'1.0'` | Revolut X API version string. |
+| `requestDelay` | `float` | `0.85` | Minimum delay in seconds between requests (rate-limit prevention). |
+| `timeout` | `int` | `15` | cURL request timeout in seconds. |
+| `maxRetries` | `int` | `3` | Maximum automatic retries on HTTP 429 and 5xx errors. |

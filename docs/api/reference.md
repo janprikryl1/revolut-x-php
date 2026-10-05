@@ -1,13 +1,13 @@
 # PHP API Reference
 
-Přehled tříd, rozhraní, pomocných nástrojů a výjimek v PHP SDK `janprikryl/revolutx`.
+Comprehensive reference of classes, traits, helper functions, and exceptions provided by the `janprikryl/revolutx` package.
 
 ---
 
-## 1. Hlavní klient: `RevolutX\Client`
-*(Dostupný také pod aliasem `RevolutX\RevolutXClient`)*
+## 1. Main Client: `RevolutX\Client`
+*(Also aliased as `RevolutX\RevolutXClient`)*
 
-### Konstruktor
+### Constructor
 ```php
 public function __construct(
     ?string $apiKey = null,
@@ -21,63 +21,63 @@ public function __construct(
 )
 ```
 
-### Veřejná tržní data (`MarketTrait`)
-- `getPairs(): array` — Konfigurace a limity všech aktivních párů.
-- `getPair(string $symbol): array` — Konfigurace konkrétního páru.
-- `getCurrencies(): array` — Konfigurace podporovaných měn.
-- `getTickers(): array` — Aktuální tickery všech párů.
-- `getTicker(string $symbol): array` — Aktuální ticker zvoleného páru.
-- `getOrderBook(string $symbol, int $depth = 10): array` — Kniha objednávek.
-- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Svíčky OHLCV.
-- `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Veřejné obchody.
+### Public Market Data (`MarketTrait`)
+- `getPairs(): array` — Returns configurations and trading limits for all active pairs.
+- `getPair(string $symbol): array` — Returns configuration for a specific trading pair.
+- `getCurrencies(): array` — Returns configurations for all supported currencies.
+- `getTickers(): array` — Returns current tickers for all trading pairs.
+- `getTicker(string $symbol): array` — Returns current ticker for a specific pair.
+- `getOrderBook(string $symbol, int $depth = 10): array` — Returns order book bids and asks.
+- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Returns OHLCV candles.
+- `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Returns public trade history.
 
-### Správa objednávek (`OrdersTrait`)
-- `placeOrder(string|array $symbolOrPayload, ?string $side = null, string $orderType = OrderType::MARKET, ...): array` — Univerzální odeslání objednávky.
-- `placeMarketOrder(string $symbol, string $side, ?string $baseSize = null, ?string $quoteSize = null, ?string $clientOrderId = null): array` — Tržní příkaz.
-- `placeLimitOrder(string $symbol, string $side, string $price, ..., bool $postOnly = false, string $timeInForce = TimeInForce::GTC): array` — Limitní příkaz.
-- `calculateMakerPrice(string $symbol, string $side, mixed $offset = '0.10', mixed $tickSize = '0.01'): string` — Výpočet bezpečné Maker ceny.
-- `placeMakerOrder(string $symbol, string $side, ?string $price = null, mixed $offset = '0.10', mixed $tickSize = '0.01', ...): array` — Garantovaný Maker příkaz (0.00% poplatek).
-- `getOrder(string $orderId): array` — Detail objednávky.
-- `getOrderFills(string $orderId): array` — Jednotlivé exekuce objednávky.
-- `getActiveOrders(?string $symbol = null): array` — Otevřené objednávky.
-- `getHistoricalOrders(?string $symbol = null, int $limit = 50, ?string $cursor = null): array` — Historie objednávek.
-- `cancelOrder(string $orderId): array` — Zrušení objednávky.
-- `cancelAllOrders(?string $symbol = null): array` — Hromadné zrušení objednávek.
+### Order Management (`OrdersTrait`)
+- `placeOrder(string|array $symbolOrPayload, ?string $side = null, string $orderType = OrderType::MARKET, ...): array` — Generic order placement.
+- `placeMarketOrder(string $symbol, string $side, ?string $baseSize = null, ?string $quoteSize = null, ?string $clientOrderId = null): array` — Submits a market order.
+- `placeLimitOrder(string $symbol, string $side, string $price, ..., bool $postOnly = false, string $timeInForce = TimeInForce::GTC): array` — Submits a limit order.
+- `calculateMakerPrice(string $symbol, string $side, mixed $offset = '0.10', mixed $tickSize = '0.01'): string` — Computes optimal limit price from live book.
+- `placeMakerOrder(string $symbol, string $side, ?string $price = null, mixed $offset = '0.10', mixed $tickSize = '0.01', ...): array` — Places a guaranteed Maker order (0.00% fee).
+- `getOrder(string $orderId): array` — Retrieves order status and fill details.
+- `getOrderFills(string $orderId): array` — Retrieves individual execution fills.
+- `getActiveOrders(?string $symbol = null): array` — Retrieves currently open orders.
+- `getHistoricalOrders(?string $symbol = null, int $limit = 50, ?string $cursor = null): array` — Retrieves historical orders with cursor pagination.
+- `cancelOrder(string $orderId): array` — Cancels an open order by ID.
+- `cancelAllOrders(?string $symbol = null): array` — Cancels all open orders across one or all pairs.
 
-### Účetnictví & Peněženka (`AccountTrait`)
-- `getBalances(): array` — Zůstatky všech měn.
-- `getBalance(string $currency): array` — Zůstatek konkrétní měny.
-- `getTransactions(int $limit = 50, ?string $cursor = null): array` — Transakční kniha (ledger).
-- `getAccountTrades(string $symbol, int $limit = 50, ?string $cursor = null): array` — Historie vlastních obchodů.
+### Account & Balances (`AccountTrait`)
+- `getBalances(): array` — Retrieves balances across all currencies.
+- `getBalance(string $currency): array` — Retrieves balance for a specific currency.
+- `getTransactions(int $limit = 50, ?string $cursor = null): array` — Retrieves ledger transaction history.
+- `getAccountTrades(string $symbol, int $limit = 50, ?string $cursor = null): array` — Retrieves private executed trades with fees.
 
 ---
 
-## 2. Typy a Konstanty (`RevolutX\Types\*`)
+## 2. Types & Constants (`RevolutX\Types\*`)
 
 - **`OrderSide`**: `OrderSide::BUY` (`'buy'`), `OrderSide::SELL` (`'sell'`).
 - **`OrderType`**: `OrderType::MARKET` (`'market'`), `OrderType::LIMIT` (`'limit'`).
 - **`TimeInForce`**: `TimeInForce::GTC` (`'gtc'`), `TimeInForce::IOC` (`'ioc'`), `TimeInForce::FOK` (`'fok'`).
 - **`Interval`**: `Interval::M1` (1), `Interval::M5` (5), `Interval::M15` (15), `Interval::H1` (60), `Interval::H4` (240), `Interval::D1` (1440).
-- **`FeeEstimate`**: DTO obsahující výpočet a popis poplatku.
+- **`FeeEstimate`**: DTO containing fee calculations, effective rate, and breakdown summary.
 
 ---
 
-## 3. Pomocné třídy (`RevolutX\Helpers\*`)
+## 3. Helpers & Utilities (`RevolutX\Helpers\*`)
 
 - **`MakerOrderStrategy`**: `calculateMakerPrice(string $side, mixed $bestBid = null, mixed $bestAsk = null, mixed $lastPrice = null, mixed $offset = '0.10', mixed $tickSize = '0.01'): string`
 - **`FeeCalculator`**: `calculate(string $side, mixed $price, bool $isMaker, mixed $baseSize = null, mixed $quoteSize = null): FeeEstimate`
-- **`OrderPayloadBuilder`**: Sestavování a validace JSON payloadů objednávek.
-- **`SymbolNormalizer`**: Normalizace názvů párů (`BTC/EUR` $\rightarrow$ `BTC-EUR`).
+- **`OrderPayloadBuilder`**: Order payload validation and JSON payload construction.
+- **`SymbolNormalizer`**: Symbol format normalization (`BTC/EUR` $\rightarrow$ `BTC-EUR`).
 
 ---
 
-## 4. Výjimky (`RevolutX\Exceptions\*`)
+## 4. Exceptions (`RevolutX\Exceptions\*`)
 
 ```text
-RevolutXException (bázová třída)
-├── AuthenticationException    — Chybějící klíče, neplatný PEM nebo HTTP 401/403
-├── RateLimitException         — Překročení limitu (HTTP 429), obsahuje getRetryAfterSeconds()
-├── ApiException               — Ostatní chyby API s getStatusCode(), getErrorCode()
-├── OrderValidationException   — Neplatné parametry před odesláním
-└── NetworkException           — Timeout, selhání cURL spojení
+RevolutXException (base exception)
+├── AuthenticationException    — Missing/invalid credentials, bad PEM key, or HTTP 401/403
+├── RateLimitException         — Exceeded rate limit (HTTP 429), contains getRetryAfterSeconds()
+├── ApiException               — Non-2xx response with getStatusCode(), getErrorCode()
+├── OrderValidationException   — Invalid parameters before sending to exchange
+└── NetworkException           — Connection timeout or cURL network failure
 ```

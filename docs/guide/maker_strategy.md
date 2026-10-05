@@ -1,16 +1,16 @@
-# PHP Průvodce: Smart Maker Strategie
+# User Guide: Smart Maker Strategy (0.00% Fee)
 
-Revolut X nabízí obchodování s nulovým poplatkem (**0.00% Maker**) pro příkazy, které tvoří trh. PHP SDK přináší kompletní nástroje pro bezpečné využití této výhody.
+Revolut X offers zero-fee trading (**0.00% Maker**) for orders that provide liquidity to the order book. The PHP SDK provides built-in tools to safely take advantage of this pricing model.
 
 ---
 
-## 1. Automatické odeslání Maker objednávky
+## 1. Automated Maker Order Placement
 
-Metoda `placeMakerOrder` v jednom kroku:
-1. Zjistí aktuální stav knihy objednávek (`bid` pro nákup, `ask` pro prodej).
-2. Spočítá optimální limitní cenu s bezpečnostním posunem (`offset`).
-3. Zaokrouhlí cenu na povolený krok trhu (`tickSize`).
-4. Odešle příkaz s příznakem `postOnly: true`.
+The `placeMakerOrder` method handles the entire workflow in one step:
+1. Queries current top of the book (`best_bid` for buy, `best_ask` for sell).
+2. Calculates an optimal limit price with safety offset (`offset`).
+3. Quantizes the price to the market's minimum price increment (`tickSize`).
+4. Submits the order with `post_only = true`.
 
 ```php
 use RevolutX\Client;
@@ -18,7 +18,7 @@ use RevolutX\Types\OrderSide;
 
 $client = new Client(apiKey: '...', privateKeyPath: 'keys/private.pem');
 
-// Nákup BTC za 50 EUR s nulovým poplatkem a offsetem 0.10 EUR
+// Buy 50.00 EUR worth of BTC as a zero-fee Maker with a 0.10 EUR safety offset
 $order = $client->placeMakerOrder(
     symbol: 'BTC-EUR',
     side: OrderSide::BUY,
@@ -27,14 +27,14 @@ $order = $client->placeMakerOrder(
     tickSize: '0.01'
 );
 
-echo "Maker příkaz zadán: " . $order['venue_order_id'] . "\n";
+echo "Maker order submitted: " . $order['venue_order_id'] . "\n";
 ```
 
 ---
 
-## 2. Samostatný výpočet ceny (`MakerOrderStrategy`)
+## 2. Standalone Price Calculation (`MakerOrderStrategy`)
 
-Pokud chcete cenu spočítat předem v rámci vlastní obchodní logiky:
+If you want to compute the price ahead of time within your own algorithmic logic:
 
 ```php
 use RevolutX\Helpers\MakerOrderStrategy;
@@ -47,14 +47,14 @@ $price = MakerOrderStrategy::calculateMakerPrice(
     tickSize: '0.01'
 );
 
-// Výsledek: "85199.80"
+// Result: "85199.80"
 ```
 
 ---
 
-## 3. Kalkulace úspor na poplatcích (`FeeCalculator`)
+## 3. Fee Projections & Savings (`FeeCalculator`)
 
-Před odesláním objednávky si můžete vygenerovat přesný odhad a porovnání poplatků:
+Before placing orders, you can inspect exact fee calculations and compare Maker vs Taker costs:
 
 ```php
 use RevolutX\Helpers\FeeCalculator;
@@ -68,7 +68,7 @@ $estimate = FeeCalculator::calculate(
 );
 
 echo $estimate->explanation;
-// Vypíše:
+// Outputs:
 // Buy 0.01176471 BTC for 1000.00 EUR at price 85000.00.
 // - Execution type: MAKER
 // - Fee rate: 0.00 %

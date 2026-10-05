@@ -29,14 +29,14 @@ markdown_extensions:
   - def_list
 
 nav:
-  - Domů: index.md
-  - Rychlý start: quickstart.md
-  - Průvodci:
-      - Tržní data: guide/market_data.md
-      - Správa objednávek: guide/orders.md
-      - Účet a zůstatky: guide/account.md
-      - 0% Maker Strategie: guide/maker_strategy.md
-  - Koncepty:
-      - Ed25519 Autentizace: concepts/auth_ed25519.md
-      - Maker vs Taker Poplatky: concepts/maker_strategy.md
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - User Guides:
+      - Public Market Data: guide/market_data.md
+      - Order Management: guide/orders.md
+      - Account & Balances: guide/account.md
+      - 0% Fee Maker Strategy: guide/maker_strategy.md
+  - Protocol Concepts:
+      - Ed25519 Authentication: concepts/auth_ed25519.md
+      - Maker vs Taker Fee Model: concepts/maker_strategy.md
   - API Reference: api/reference.md

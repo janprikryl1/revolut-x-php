@@ -1,70 +1,52 @@
-# Smart Maker Order Strategie (0.00% poplatek)
+# Concept: Maker vs Taker Fee Structure
 
-Jednou z největších výhod obchodování na burze **Revolut X** je cenová struktura poplatků:
+One of the greatest competitive advantages of **Revolut X** is its fee schedule:
 
-| Typ exekuce | Poplatek | Popis |
+| Execution Type | Fee Rate | Description |
 | :--- | :--- | :--- |
-| **Maker** | **0.00 %** | Příkaz přidává likviditu do knihy objednávek (Limit order). |
-| **Taker** | **0.09 %** | Příkaz odebírá likviditu (Market order nebo Limit agresivně spárovaný). |
+| **Maker** | **0.00 %** | Order adds liquidity to the order book (Limit order resting in the book). |
+| **Taker** | **0.09 %** | Order takes liquidity from the order book (Market order or immediate limit match). |
 
-Při větších objemech nebo algoritmickém obchodování představuje rozdíl mezi 0.00 % a 0.09 % zásadní úsporu nákladů.
-
----
-
-## Jak funguje ochrana `post_only`
-
-Při odeslání limitního příkazu hrozí, že se cena na trhu posune a příkaz se okamžitě spáruje s protistranou. V takovém případě by burza naúčtovala poplatek **0.09% (Taker)**.
-
-Příznak `post_only = true`:
-- Zaručuje, že příkaz vstoupí do knihy objednávek výhradně jako **Maker**.
-- Pokud by se příkaz měl okamžitě realizovat jako Taker, burza jej okamžitě odmítne/zruší bez jakéhokoliv poplatku.
+For systematic or automated trading strategies, the difference between 0.00% and 0.09% represents substantial compound fee savings over time.
 
 ---
 
-## Dynamický výpočet Maker ceny
+## The `post_only` Protection
 
-Knihovna obsahuje specializovanou třídu `MakerOrderStrategy`, která na základě živého stavu trhu vypočítá optimální limitní cenu s bezpečnostním offsetem:
+When submitting standard limit orders, volatile market movements may cause the order to match immediately with an existing order. In that scenario, the exchange would classify it as a **Taker** and charge 0.09%.
 
-- **Pro NÁKUP (BUY)**:
-  $$\text{cena} = \text{best\_bid} - \text{offset}$$
-- **Pro PRODEJ (SELL)**:
-  $$\text{cena} = \text{best\_ask} + \text{offset}$$
-
-Příkaz je následně zaokrouhlen na platnou velikost cenového kroku měnového páru (`tick_size`).
+The `post_only = true` flag:
+- Guarantees the order enters the order book strictly as a **Maker**.
+- If the order would match immediately upon placement, the exchange automatically cancels/rejects it without charging any fees.
 
 ---
 
-## Příklady použití
+## Dynamic Maker Price Calculation
 
-=== "Python"
+The SDK's `MakerOrderStrategy` evaluates live order book depth and calculates an optimal limit price with a configurable safety offset:
 
-    ```python
-    from revolut_x import RevolutXClient, OrderSide
+- **For BUY orders**:
+  $$\text{price} = \text{best\_bid} - \text{offset}$$
+- **For SELL orders**:
+  $$\text{price} = \text{best\_ask} + \text{offset}$$
 
-    client = RevolutXClient(api_key="...", private_key_path="keys/private.pem")
+The calculated price is then quantized to the market's required minimum price increment (`tick_size`).
 
-    # Automaticky stáhne aktuální bid/ask, aplikuje offset 0.10 EUR a odešle s post_only=True
-    order = client.place_maker_order(
-        symbol="BTC-EUR",
-        side=OrderSide.BUY,
-        quote_size="50.00",
-        offset="0.10",
-    )
-    ```
+---
 
-=== "PHP"
+## Code Example
 
-    ```php
-    use RevolutX\Client;
-    use RevolutX\Types\OrderSide;
+```php
+use RevolutX\Client;
+use RevolutX\Types\OrderSide;
 
-    $client = new Client(apiKey: '...', privateKeyPath: 'keys/private.pem');
+$client = new Client(apiKey: '...', privateKeyPath: 'keys/private.pem');
 
-    // Automaticky stáhne aktuální bid/ask, aplikuje offset 0.10 EUR a odešle s post_only=True
-    $order = $client->placeMakerOrder(
-        symbol: 'BTC-EUR',
-        side: OrderSide::BUY,
-        quoteSize: '50.00',
-        offset: '0.10'
-    );
-    ```
+// Automatically fetches the live book, applies 0.10 EUR offset, and submits post_only=true
+$order = $client->placeMakerOrder(
+    symbol: 'BTC-EUR',
+    side: OrderSide::BUY,
+    quoteSize: '50.00',
+    offset: '0.10'
+);
+```

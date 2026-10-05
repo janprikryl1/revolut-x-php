@@ -1,12 +1,12 @@
-# PHP Průvodce: Správa objednávek
+# User Guide: Order Management
 
-Modul objednávek umožňuje zadávat tržní i limitní příkazy, kontrolovat stav rozpracovaných objednávek a rušit aktivní pokyny.
+The orders module provides full capabilities for placing Market and Limit orders, checking execution progress, querying historical trades, and canceling open orders.
 
 ---
 
-## 1. Tržní objednávka (Market Order)
+## 1. Market Orders
 
-Tržní objednávka se páruje okamžitě za nejlepší dostupnou cenu v knize (Taker poplatek 0.09%). Zadávejte buď `quoteSize` (hodnota v EUR) nebo `baseSize` (množství v BTC):
+A Market Order executes immediately at the best available price in the order book (subject to the 0.09% Taker fee). Provide either `quoteSize` (amount in quote currency, e.g. EUR) or `baseSize` (amount in base currency, e.g. BTC):
 
 ```php
 use RevolutX\Client;
@@ -14,21 +14,21 @@ use RevolutX\Types\OrderSide;
 
 $client = new Client(apiKey: '...', privateKeyPath: 'keys/private.pem');
 
-// Nákup BTC za 50.00 EUR
+// Buy 50.00 EUR worth of BTC at market price
 $order = $client->placeMarketOrder(
     symbol: 'BTC-EUR',
     side: OrderSide::BUY,
     quoteSize: '50.00'
 );
 
-echo "Příkaz odeslán. ID: " . $order['venue_order_id'] . "\n";
+echo "Market order submitted. ID: " . $order['venue_order_id'] . "\n";
 ```
 
 ---
 
-## 2. Limitní objednávka (Limit Order)
+## 2. Limit Orders
 
-Limitní objednávka čeká v knize na dosažení zadané ceny. Pro garanci nulového poplatku použijte `postOnly: true`:
+A Limit Order waits in the order book until the specified price is matched. To guarantee zero fees, set `postOnly: true`:
 
 ```php
 use RevolutX\Types\OrderSide;
@@ -46,33 +46,33 @@ $order = $client->placeLimitOrder(
 
 ---
 
-## 3. Zjištění stavu a exekuce objednávky
+## 3. Order Status & Execution Fills
 
 ```php
-// Detail objednávky podle venue_order_id
+// Retrieve order details by venue_order_id
 $detail = $client->getOrder('7a52e92e-8639-4fe1-abaa-68d3a2d5234b');
-echo "Stav: " . $detail['status'] . "\n";
-echo "Vyplněno: " . $detail['filled_size'] . "\n";
+echo "Status: " . $detail['status'] . "\n";
+echo "Filled Size: " . $detail['filled_size'] . "\n";
 
-// Získání jednotlivých exekucí (fills) a ověření maker statusu
+// Inspect individual partial executions (fills) and maker/taker status
 $fills = $client->getOrderFills('7a52e92e-8639-4fe1-abaa-68d3a2d5234b');
 foreach ($fills as $fill) {
     $feeType = $fill['im'] ? 'Maker (0.00%)' : 'Taker (0.09%)';
-    echo "Cena: {$fill['p']} EUR, Objem: {$fill['q']}, Poplatek: {$feeType}\n";
+    echo "Price: {$fill['p']} EUR | Qty: {$fill['q']} | Fee: {$feeType}\n";
 }
 ```
 
 ---
 
-## 4. Aktivní objednávky a rušení
+## 4. Querying Active Orders & Cancellation
 
 ```php
-// Seznam všech otevřených příkazů
+// List all open orders for a trading pair
 $activeOrders = $client->getActiveOrders('BTC-EUR');
 
-// Zrušení konkrétního příkazu
+// Cancel a specific order by ID
 $client->cancelOrder('7a52e92e-8639-4fe1-abaa-68d3a2d5234b');
 
-// Zrušení všech otevřených příkazů pro daný měnový pár
+// Cancel all open orders for a given symbol
 $client->cancelAllOrders('BTC-EUR');
 ```
