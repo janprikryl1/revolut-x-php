@@ -215,6 +215,7 @@ class Signer
      * @param string $path Request path.
      * @param array<string, mixed>|null $params Query parameters.
      * @param mixed $body Request body.
+     * @param int $timestampOffsetMs Optional offset in milliseconds to adjust local clock.
      * @return array<string, string>
      */
     public static function signRequest(
@@ -223,9 +224,10 @@ class Signer
         string $method,
         string $path,
         ?array $params = null,
-        mixed $body = null
+        mixed $body = null,
+        int $timestampOffsetMs = 0
     ): array {
-        $timestampMs = (string) (int) (microtime(true) * 1000);
+        $timestampMs = (string) ((int) (microtime(true) * 1000) + $timestampOffsetMs);
 
         $message = self::buildSignatureMessage(
             timestampMs: $timestampMs,

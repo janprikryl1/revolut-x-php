@@ -31,6 +31,7 @@ class Client
      * @param float $requestDelay Minimum delay between HTTP requests in seconds (default: 0.85).
      * @param int $timeout cURL request timeout in seconds (default: 15).
      * @param int $maxRetries Maximum retry attempts on 429/5xx (default: 3).
+     * @param int $timestampOffsetMs Clock offset in milliseconds for request signing (default: 0).
      */
     public function __construct(
         ?string $apiKey = null,
@@ -40,7 +41,8 @@ class Client
         string $apiVersion = '1.0',
         float $requestDelay = 0.85,
         int $timeout = 15,
-        int $maxRetries = 3
+        int $maxRetries = 3,
+        int $timestampOffsetMs = 0
     ) {
         $secretKey = null;
 
@@ -57,13 +59,29 @@ class Client
             secretKey: $secretKey,
             requestDelay: $requestDelay,
             timeout: $timeout,
-            maxRetries: $maxRetries
+            maxRetries: $maxRetries,
+            timestampOffsetMs: $timestampOffsetMs
         );
     }
 
     public function isAuthenticated(): bool
     {
         return $this->http->isAuthenticated();
+    }
+
+    public function getTimestampOffset(): int
+    {
+        return $this->http->getTimestampOffset();
+    }
+
+    public function setTimestampOffset(int $offsetMs): void
+    {
+        $this->http->setTimestampOffset($offsetMs);
+    }
+
+    public function syncTime(): int
+    {
+        return $this->http->syncTime();
     }
 
     public function getHttpClient(): HttpClient

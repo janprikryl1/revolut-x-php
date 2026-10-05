@@ -165,4 +165,26 @@ class AuthTest extends TestCase
         $verified = sodium_crypto_sign_verify_detached($sigRaw, $expectedMessage, $publicKey);
         $this->assertTrue($verified, 'Ed25519 signature verification must pass.');
     }
+
+    public function testSignRequestWithTimestampOffset(): void
+    {
+        $keypair = sodium_crypto_sign_keypair();
+        $secretKey = sodium_crypto_sign_secretkey($keypair);
+
+        $nowMs = (int)(microtime(true) * 1000);
+        $offset = -5000;
+
+        $headers = Signer::signRequest(
+            apiKey: 'key',
+            secretKey: $secretKey,
+            method: 'GET',
+            path: '/api/1.0/orders',
+            timestampOffsetMs: $offset
+        );
+
+        $ts = (int)$headers['X-Revx-Timestamp'];
+        // Timestamp should be roughly nowMs - 5000
+        $this->assertLessThan($nowMs - 4000, $ts);
+        $this->assertGreaterThan($nowMs - 6000, $ts);
+    }
 }
