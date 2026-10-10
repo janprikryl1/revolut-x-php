@@ -45,6 +45,16 @@ trait AccountTrait
     /**
      * Retrieve account transaction history (ledger).
      *
+     * Each transaction is a two-leg transfer and has no top-level 'amount' key:
+     * read the amount and currency from 'source' (debited) and 'destination'
+     * (credited), which may be denominated in different currencies.
+     *
+     * Transaction shape:
+     *   id: string, status: string, type: 'buy'|'sell'|'receive'|'send',
+     *   source: array{amount: string, currency: string, account: array{type: string}},
+     *   destination: array{amount: string, currency: string, account: array{type: string}},
+     *   created_date: int (ms), processed_date: int (ms)
+     *
      * @return array{transactions: list<array<string, mixed>>, next_cursor: string|null}
      */
     public function getTransactions(int $limit = 50, ?string $cursor = null): array
@@ -71,6 +81,16 @@ trait AccountTrait
 
     /**
      * Retrieve private (your own) trade history for a trading pair.
+     *
+     * Fills use abbreviated keys - there are no 'side', 'price' or 'quantity'
+     * keys, and no fee amount is returned.
+     *
+     * Trade shape:
+     *   tid: string (fill id), oid: string (order id), s: 'buy'|'sell',
+     *   p: float (price in 'pc'), pc: string (quote currency), pn: string,
+     *   q: string (quantity in 'qc'), qc: string (base currency), qn: string,
+     *   aid: string, anm: string, ve: string, vp: string,
+     *   tdt: int (ms), pdt: int (ms), im: string ('1' = Maker, '' = Taker)
      *
      * @param string $symbol Trading pair (e.g. 'BTC-EUR').
      * @return array{trades: list<array<string, mixed>>, next_cursor: string|null}

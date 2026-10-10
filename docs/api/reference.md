@@ -37,7 +37,7 @@ public function __construct(
 - `placeLimitOrder(string $symbol, string $side, string $price, ..., bool $postOnly = false, string $timeInForce = TimeInForce::GTC): array` — Submits a limit order.
 - `calculateMakerPrice(string $symbol, string $side, mixed $offset = '0.10', mixed $tickSize = '0.01'): string` — Computes optimal limit price from live book.
 - `placeMakerOrder(string $symbol, string $side, ?string $price = null, mixed $offset = '0.10', mixed $tickSize = '0.01', ...): array` — Places a guaranteed Maker order (0.00% fee).
-- `getOrder(string $orderId): array` — Retrieves order status and fill details.
+- `getOrder(string $orderId): array` — Retrieves order status and fill progress. Keys are `id`, `quantity`, `filled_quantity`, `leaves_quantity`, `filled_amount`, `total_fee` — there is no `filled_size`. See [Order Management](../guide/orders.md#order-detail-structure).
 - `getOrderFills(string $orderId): array` — Retrieves individual execution fills.
 - `getActiveOrders(?string $symbol = null): array` — Retrieves currently open orders.
 - `getHistoricalOrders(?string $symbol = null, int $limit = 50, ?string $cursor = null): array` — Retrieves historical orders with cursor pagination.
@@ -47,8 +47,8 @@ public function __construct(
 ### Account & Balances (`AccountTrait`)
 - `getBalances(): array` — Retrieves balances across all currencies.
 - `getBalance(string $currency): array` — Retrieves balance for a specific currency.
-- `getTransactions(int $limit = 50, ?string $cursor = null): array` — Retrieves ledger transaction history.
-- `getAccountTrades(string $symbol, int $limit = 50, ?string $cursor = null): array` — Retrieves private executed trades with fees.
+- `getTransactions(int $limit = 50, ?string $cursor = null): array` — Retrieves ledger transaction history as `['transactions' => [...], 'next_cursor' => ?string]`. Each transaction is a two-leg transfer (`source`/`destination`, each with `amount`, `currency`, `account.type`) — there is no top-level `amount` key. See [Account & Balances](../guide/account.md#transaction-structure).
+- `getAccountTrades(string $symbol, int $limit = 50, ?string $cursor = null): array` — Retrieves private executed fills as `['trades' => [...], 'next_cursor' => ?string]`. Fills use abbreviated keys (`s` side, `p` price, `q` quantity, `im` maker flag) and carry no fee amount. See [Account & Balances](../guide/account.md#private-trade-structure).
 
 ---
 

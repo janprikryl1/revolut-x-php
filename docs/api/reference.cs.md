@@ -37,7 +37,7 @@ public function __construct(
 - `placeLimitOrder(string $symbol, string $side, string $price, ..., bool $postOnly = false, string $timeInForce = TimeInForce::GTC): array` — Limitní příkaz.
 - `calculateMakerPrice(string $symbol, string $side, mixed $offset = '0.10', mixed $tickSize = '0.01'): string` — Výpočet bezpečné Maker ceny.
 - `placeMakerOrder(string $symbol, string $side, ?string $price = null, mixed $offset = '0.10', mixed $tickSize = '0.01', ...): array` — Garantovaný Maker příkaz (0.00% poplatek).
-- `getOrder(string $orderId): array` — Detail objednávky.
+- `getOrder(string $orderId): array` — Detail objednávky. Klíče jsou `id`, `quantity`, `filled_quantity`, `leaves_quantity`, `filled_amount`, `total_fee` — pole `filled_size` neexistuje. Viz [Správa objednávek](../guide/orders.md#struktura-detailu-objednavky).
 - `getOrderFills(string $orderId): array` — Jednotlivé exekuce objednávky.
 - `getActiveOrders(?string $symbol = null): array` — Otevřené objednávky.
 - `getHistoricalOrders(?string $symbol = null, int $limit = 50, ?string $cursor = null): array` — Historie objednávek.
@@ -47,8 +47,8 @@ public function __construct(
 ### Účetnictví & Peněženka (`AccountTrait`)
 - `getBalances(): array` — Zůstatky všech měn.
 - `getBalance(string $currency): array` — Zůstatek konkrétní měny.
-- `getTransactions(int $limit = 50, ?string $cursor = null): array` — Transakční kniha (ledger).
-- `getAccountTrades(string $symbol, int $limit = 50, ?string $cursor = null): array` — Historie vlastních obchodů.
+- `getTransactions(int $limit = 50, ?string $cursor = null): array` — Transakční kniha (ledger) ve formátu `['transactions' => [...], 'next_cursor' => ?string]`. Každá transakce je dvoustranný převod (`source`/`destination`, každý s `amount`, `currency`, `account.type`) — pole `amount` na nejvyšší úrovni neexistuje. Viz [Účet a zůstatky](../guide/account.md#struktura-transakce).
+- `getAccountTrades(string $symbol, int $limit = 50, ?string $cursor = null): array` — Historie vlastních exekucí ve formátu `['trades' => [...], 'next_cursor' => ?string]`. Exekuce používají zkrácené klíče (`s` strana, `p` cena, `q` množství, `im` maker příznak) a neobsahují výši poplatku. Viz [Účet a zůstatky](../guide/account.md#struktura-private-trade).
 
 ---
 
