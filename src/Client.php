@@ -34,6 +34,7 @@ class Client
      * @param float $maxRetryWait Hard ceiling in seconds for a single 429 wait
      *        (default: 30.0). Lower it in request-scoped code — a web request
      *        should fail fast rather than sit in a retry.
+     * @param int $timestampOffsetMs Clock offset in milliseconds for request signing (default: 0).
      */
     public function __construct(
         ?string $apiKey = null,
@@ -44,7 +45,8 @@ class Client
         float $requestDelay = 0.85,
         int $timeout = 15,
         int $maxRetries = 3,
-        float $maxRetryWait = 30.0
+        float $maxRetryWait = 30.0,
+        int $timestampOffsetMs = 0
     ) {
         $secretKey = null;
 
@@ -62,13 +64,29 @@ class Client
             requestDelay: $requestDelay,
             timeout: $timeout,
             maxRetries: $maxRetries,
-            maxRetryWait: $maxRetryWait
+            maxRetryWait: $maxRetryWait,
+            timestampOffsetMs: $timestampOffsetMs
         );
     }
 
     public function isAuthenticated(): bool
     {
         return $this->http->isAuthenticated();
+    }
+
+    public function getTimestampOffset(): int
+    {
+        return $this->http->getTimestampOffset();
+    }
+
+    public function setTimestampOffset(int $offsetMs): void
+    {
+        $this->http->setTimestampOffset($offsetMs);
+    }
+
+    public function syncTime(): int
+    {
+        return $this->http->syncTime();
     }
 
     public function getHttpClient(): HttpClient

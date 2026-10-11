@@ -176,6 +176,18 @@ trait OrdersTrait
     /**
      * Retrieve detailed information about a specific order.
      *
+     * Note this payload differs from the order submit response: the id key is
+     * 'id' (not 'venue_order_id'), 'symbol' is slash-separated ('BTC/EUR'), and
+     * sizes are named '*_quantity' - there is no 'filled_size' or 'size' key.
+     *
+     * Order detail shape:
+     *   id: string, client_order_id: string, symbol: string, side: 'buy'|'sell',
+     *   type: 'limit'|'market', quantity: string, filled_quantity: string,
+     *   leaves_quantity: string, filled_amount: string, price: string,
+     *   total_fee: string, fee_currency: string, status: string,
+     *   time_in_force: string, execution_instructions: list<string>,
+     *   created_date: int (ms), updated_date: int (ms)
+     *
      * @return array<string, mixed>
      */
     public function getOrder(string $orderId): array

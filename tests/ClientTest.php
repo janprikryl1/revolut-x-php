@@ -46,4 +46,13 @@ class ClientTest extends TestCase
 
         $client->getBalances();
     }
+
+    public function testTimestampOffsetAndSyncTime(): void
+    {
+        $client = new Client(timestampOffsetMs: 1500);
+        $this->assertSame(1500, $client->getTimestampOffset());
+
+        $client->setTimestampOffset(-2500);
+        $this->assertSame(-2500, $client->getTimestampOffset());
+    }
 }

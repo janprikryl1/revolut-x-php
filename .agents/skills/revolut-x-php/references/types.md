@@ -145,7 +145,9 @@ final class FeeEstimate
 ]
 ```
 
-### Order Response Array
+### Order Submit Response Array
+Returned by `placeOrder()` / `placeMarketOrder()` / `placeLimitOrder()` /
+`placeMakerOrder()`.
 ```php
 [
     'venue_order_id' => '7a52e92e-8639-4fe1-abaa-68d3a2d5234b',
@@ -156,6 +158,35 @@ final class FeeEstimate
 ]
 ```
 
+### Order Detail Array
+Returned by `getOrder()`. Note this differs from the submit response above: the
+id key is `id` (not `venue_order_id`), `symbol` comes back slash-separated, and
+quantities are `*_quantity` - there is **no `filled_size` or `size` key**.
+```php
+[
+    'id' => '2fc4863e-2699-4d4f-9215-780e55826570',
+    'client_order_id' => '9006daa3-525c-428c-85b0-982d1315c7f9',
+    'symbol' => 'BTC/EUR',      // slash form, requests use 'BTC-EUR'
+    'side' => 'buy',
+    'type' => 'limit',          // 'limit' | 'market'
+    'quantity' => '0.00006748',        // ordered, base currency
+    'filled_quantity' => '0',          // executed
+    'leaves_quantity' => '0.00006748', // still open
+    'filled_amount' => '0',            // executed value, quote currency
+    'price' => '74091.97',
+    'total_fee' => '0',         // 0 when unfilled or Maker
+    'fee_currency' => 'EUR',
+    'status' => 'new',          // lowercase here, e.g. 'new'
+    'time_in_force' => 'gtc',
+    'execution_instructions' => ['post_only'],
+    'created_date' => 1791661554000, // Unix ms
+    'updated_date' => 1791661554000, // Unix ms
+]
+```
+
+- Fully filled check: `(float)$detail['leaves_quantity'] <= 0.0`.
+- Maker confirmation: `in_array('post_only', $detail['execution_instructions'] ?? [], true)`.
+
 ### Balance Array
 ```php
 [
@@ -165,3 +196,61 @@ final class FeeEstimate
     'total' => '150.00',
 ]
 ```
+
+### Transaction Array
+Returned inside `getTransactions()['transactions']`. A transaction is a transfer
+between two legs — there is **no top-level `amount` key**; read
+`source.amount` (debited) and `destination.amount` (credited), which may be in
+different currencies.
+
+```php
+[
+    'id' => '6aca5f93-3529-a8dd-a88b-7fd105c824d5',
+    'status' => 'completed',
+    'type' => 'sell', // 'buy', 'sell', 'receive', 'send'
+    'source' => [
+        'amount' => '0.00001000',
+        'currency' => 'BTC',
+        'account' => ['type' => 'revolut_x'], // 'revolut_x' | 'revolut'
+    ],
+    'destination' => [
+        'amount' => '0.74',
+        'currency' => 'EUR',
+        'account' => ['type' => 'revolut_x'],
+    ],
+    'created_date' => 1791647635654,   // Unix timestamp in milliseconds
+    'processed_date' => 1791647642966, // Unix timestamp in milliseconds
+]
+```
+
+- `buy`: `source` is fiat, `destination` is crypto. `sell`: reversed.
+- `receive` with `source.account.type = 'revolut'`: top-up from the main Revolut
+  account into Revolut X.
+
+### Private Trade Array
+Returned inside `getAccountTrades()['trades']`. This endpoint uses
+**abbreviated keys** — there are no `side`, `price` or `quantity` keys; use
+`s`, `p` and `q`. No fee amount is returned.
+
+```php
+[
+    'tid' => '01fe035493603ee083af048511364379', // trade (fill) id
+    'oid' => 'de238453-7ac1-41dd-9ab9-e631f01ca4c6', // order id
+    's' => 'buy',          // side: 'buy' | 'sell'
+    'p' => 74059.5,        // price, in 'pc'
+    'pc' => 'EUR',         // price currency (quote)
+    'pn' => 'MONE',        // price notation
+    'q' => '0.00006751',   // quantity, in 'qc'
+    'qc' => 'BTC',         // quantity currency (base)
+    'qn' => 'UNIT',        // quantity notation
+    'aid' => 'BTC',        // base asset id
+    'anm' => 'Bitcoin',    // base asset name
+    've' => 'REVX',        // venue
+    'vp' => 'REVX',        // venue provider
+    'tdt' => 1791647668224, // trade time, Unix ms
+    'pdt' => 1791647668224, // processed time, Unix ms
+    'im' => '1',           // maker flag: '1' = Maker, '' = Taker
+]
+```
+
+- Notional value of a fill: `(float)$trade['p'] * (float)$trade['q']` in `pc`.

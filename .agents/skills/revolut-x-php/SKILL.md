@@ -180,9 +180,12 @@ $order = $client->placeMakerOrder(
 ### 4. Querying & Canceling Orders
 
 ```php
-// Check order status and total filled size
+// Check order status and filled quantity (no 'filled_size' key exists)
 $detail = $client->getOrder('order-uuid-here');
 echo "Status: {$detail['status']}\n";
+echo "Filled: {$detail['filled_quantity']} / {$detail['quantity']}"
+   . " | Remaining: {$detail['leaves_quantity']}\n";
+echo "Fee: {$detail['total_fee']} {$detail['fee_currency']}\n";
 
 // Inspect individual partial executions (fills)
 $fills = $client->getOrderFills('order-uuid-here');
@@ -214,11 +217,24 @@ $balances = $client->getBalances();
 $eur = $client->getBalance('EUR');
 echo "Available EUR: {$eur['available']}\n";
 
-// 3. Transaction ledger history (deposits, withdrawals, fees)
+// 3. Transaction ledger history (deposits, withdrawals, exchanges, trades)
 $ledger = $client->getTransactions(limit: 20);
 
-// 4. Private executed trade history with fee breakdowns
+// Each transaction is a two-leg transfer: no top-level 'amount' key exists.
+foreach ($ledger['transactions'] as $tx) {
+    echo "{$tx['type']} | {$tx['source']['amount']} {$tx['source']['currency']}"
+       . " -> {$tx['destination']['amount']} {$tx['destination']['currency']}\n";
+}
+
+// 4. Private executed trade history (fills)
 $myTrades = $client->getAccountTrades('BTC-EUR', limit: 50);
+
+// Fills use abbreviated keys: s = side, p = price, q = quantity, im = maker flag.
+// No fee amount is returned.
+foreach ($myTrades['trades'] as $t) {
+    $role = !empty($t['im']) ? 'Maker' : 'Taker';
+    echo "{$role} | {$t['s']} {$t['q']} {$t['qc']} @ {$t['p']} {$t['pc']}\n";
+}
 ```
 
 ---
