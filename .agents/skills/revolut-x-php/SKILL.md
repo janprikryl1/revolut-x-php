@@ -70,6 +70,8 @@ $client = new Client(
 | `requestDelay` | `float` | `0.85` | Delay in seconds between requests (rate limit prevention) |
 | `timeout` | `int` | `15` | cURL timeout in seconds |
 | `maxRetries` | `int` | `3` | Retries on HTTP 429 and network errors |
+| `maxRetryWait` | `float` | `30.0` | Hard ceiling in seconds for a single 429 wait — lower it in request-scoped code so a rate-limited call fails fast |
+| `timestampOffsetMs` | `int` | `0` | Clock offset in milliseconds applied when signing requests; `0` lets the client auto-sync from the server `Date` header |
 
 `$client->isAuthenticated(): bool` — Returns `true` if both API key and private key are configured.
 
@@ -130,8 +132,11 @@ echo "Min order size: {$btcRules['min_order_size']}\n";
 **Important — get this right whenever the user asks for candles over a date range
 ("today", "yesterday", "this week"). These rules are verified against the live API.**
 
-- `start` (in the response) and the `since` / `until` parameters are Unix timestamps
-  in **milliseconds**, not seconds.
+- `since` / `until` accept `int|float|string|DateTimeInterface|null`. **Passing a
+  `DateTimeInterface` is the clearest option** — the SDK converts it via
+  `TimestampConverter`. A raw *number* is read as **milliseconds**, never seconds, and
+  is never rescaled, so `since: time()` silently yields a window starting in 1970.
+  A string without an offset is read as UTC. `start` in the response is milliseconds.
 - **Candle buckets are aligned to UTC, not to the local timezone.** With
   `Interval::D1` the daily bucket opens at `00:00` UTC (= `01:00` in `Europe/Prague`),
   so a candle covering a *local* calendar day does not exist. Taking "today midnight"
@@ -153,14 +158,13 @@ echo "Min order size: {$btcRules['min_order_size']}\n";
 ```php
 use RevolutX\Types\Interval;
 
-$interval = Interval::H1;
-$tz       = new DateTimeZone('Europe/Prague'); // explicit, not the PHP default
+$tz = new DateTimeZone('Europe/Prague'); // explicit, not the PHP default
 
 $candles = $client->getCandles(
     'BTC-EUR',
-    interval: $interval,
-    since: (new DateTimeImmutable('today midnight', $tz))->getTimestamp() * 1000,
-    until: (new DateTimeImmutable('tomorrow midnight', $tz))->getTimestamp() * 1000
+    interval: Interval::H1,
+    since: new DateTimeImmutable('today midnight', $tz),
+    until: new DateTimeImmutable('tomorrow midnight', $tz)
 );
 
 foreach ($candles as $c) {

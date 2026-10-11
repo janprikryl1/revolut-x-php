@@ -72,44 +72,43 @@ foreach (array_slice($candles, -5) as $candle) {
 }
 ```
 
-### Práce s časem (přečtěte si před stavbou „dnešního" přehledu)
+### Práce s časem: dvě věci, které je potřeba vědět
 
-!!! warning "Svíčky jsou zarovnané na UTC a nejnovější svíčka se ještě tvoří"
-    Tyto dvě věci jsou nejčastější příčinou toho, že si dva svíčkové přehledy
-    zdánlivě odporují, i když jsou data pod nimi identická:
+Dva svíčkové přehledy postavené nad stejnými daty si můžou snadno odporovat.
+Téměř vždy za tím stojí jeden z následujících dvou důvodů, ne chyba.
 
-    1. **`start`, `since` a `until` jsou unixové časy v _milisekundách_ a svíčky jsou
-       zarovnané na UTC — ne na vaši lokální zónu.** U `Interval::D1` začíná denní
-       svíčka v `00:00` UTC, což je `01:00` v zóně `Europe/Prague` (CET) — svíčka za
-       „lokální kalendářní den" tedy vůbec neexistuje. Když vezmete „dnešní půlnoc"
-       v UTC a když ji vezmete v zóně `UTC+2`, vyberete dvě různé sady svíček —
-       obě správné, jen odpovídají na jinou otázku.
-    2. **Poslední svíčka ještě není uzavřená.** Její `close`, `high`, `low` a `volume`
-       se mění až do konce intervalu, takže dva běhy pár minut po sobě vrátí pro
-       stejný `start` legitimně jiná čísla.
+**Svíčky jsou krájené podle UTC, ne podle vašeho lokálního dne.** Hodinová svíčka
+začíná v celou hodinu UTC a denní svíčka `D1` v `00:00` UTC — což je v zóně
+`Europe/Prague` `01:00` lokálního času. Svíčka za váš lokální kalendářní den tedy
+neexistuje. Stejně tak „dnes od půlnoci" znamená něco jiného v UTC a něco jiného
+v Praze; obě čtení jsou správná, jen odpovídají na jinou otázku. Zónu proto
+zvolte vědomě a výstup jí označte.
 
-Když předáte **oba** parametry `since` i `until`, API vrátí jen uzavřené svíčky —
-ta rozestavěná se vynechá, což je přesně to, co chcete pro stabilní přehled:
+**Nejnovější svíčka není dokončená.** Její `close`, `high`, `low` a `volume` se
+hýbou až do konce intervalu. Když stejný skript pustíte dvakrát s odstupem pár
+minut, poslední řádek se legitimně bude lišit, zatímco všechny řádky nad ním
+zůstanou totožné.
+
+#### Stabilní přehled za jeden den
+
+Předejte **oba** parametry `since` i `until`. API pak vrátí jen uzavřené svíčky,
+takže ta nedokončená vám nerozhodí součty:
 
 ```php
 use RevolutX\Types\Interval;
 
-$interval = Interval::H1;
-
-// Zónu zvolte explicitně, nespoléhejte na date_default_timezone_get().
+// Zónu zvolte vědomě — nepřebírejte date_default_timezone_get().
 $tz = new DateTimeZone('Europe/Prague');
-
-$startOfDay = (new DateTimeImmutable('today midnight', $tz))->getTimestamp() * 1000;
-$endOfDay   = (new DateTimeImmutable('tomorrow midnight', $tz))->getTimestamp() * 1000;
 
 $candles = $client->getCandles(
     'BTC-EUR',
-    interval: $interval,
-    since: $startOfDay,
-    until: $endOfDay
+    interval: Interval::H1,
+    since: new DateTimeImmutable('today midnight', $tz),
+    until: new DateTimeImmutable('tomorrow midnight', $tz)
 );
 
 foreach ($candles as $candle) {
+    // 'start' se vrací v milisekundách — viz „Omezení časového okna" níže.
     $time = (new DateTimeImmutable('@' . intdiv((int) $candle['start'], 1000)))
         ->setTimezone($tz)
         ->format('Y-m-d H:i');
@@ -118,12 +117,94 @@ foreach ($candles as $candle) {
 }
 ```
 
-Pokud naopak živou, nedokončenou svíčku chcete (třeba pro zobrazení typu ticker),
-předejte samotné `since` — pak je zahrnutá jako poslední prvek.
+Chcete naopak tu živou, nedokončenou svíčku — třeba pro zobrazení typu ticker?
+Předejte samotné `since` a přijde jako poslední prvek.
 
-!!! warning "Nefiltrujte celou odpověď na straně PHP u krátkých intervalů"
-    Bez `since`/`until` vrací endpoint **až 1000 svíček**. Pro `H1` nebo `D1` to
-    jeden den pokryje s rezervou, ale `1000 × 1m ≈ 16,7 hodiny` — takže když
-    stáhnete `Interval::M1` bez omezení a „dnešek" si vyfiltrujete v PHP, po
-    přibližně `16:40` lokálního času vám tiše zmizí ranní svíčky. Vždy request
-    omezte přes `since`/`until`.
+!!! warning "Nestahujte všechno a nefiltrujte v PHP"
+    Bez `since`/`until` vrací endpoint **posledních 1000 svíček**. Pro `H1` nebo
+    `D1` to jeden den pokryje s rezervou, ale 1000 minutových svíček je jen
+    asi 16,7 hodiny. Když tedy stáhnete `Interval::M1` bez omezení a „dnešek" si
+    vyfiltrujete v PHP, někdy po `16:40` lokálního času vám ráno tiše vypadne ze
+    začátku rozsahu — bez chyby, jen chybějící řádky. Omezte místo toho request.
+
+### Omezení časového okna
+
+`$since` a `$until` přijímají kteroukoli z těchto hodnot:
+
+| Hodnota | Význam |
+| :--- | :--- |
+| `1700000000000` | Unix timestamp v **milisekundách**, předá se beze změny. |
+| `new DateTimeImmutable('2024-01-01', new DateTimeZone('UTC'))` | Převede se podle vlastní časové zóny objektu. |
+| `'2024-01-01T00:00:00Z'` | Datum jako string — naparsuje se, offset se respektuje. |
+| `'-7 days'` | Relativní výraz, jak ho chápe `DateTimeImmutable`. |
+| `'1700000000000'` | String z 12+ číslic se bere jako milisekundy. |
+
+```php
+use RevolutX\Types\Interval;
+
+$candles = $client->getCandles(
+    'BTC-EUR',
+    interval: Interval::H1,
+    since: new DateTimeImmutable('-7 days', new DateTimeZone('UTC')),
+    until: new DateTimeImmutable('now', new DateTimeZone('UTC')),
+);
+```
+
+String bez explicitního offsetu se chápe jako **UTC**, ne podle serverového
+`date.timezone` — stejný kód tedy vybere stejné okno na každém stroji. Prázdný
+nebo nenaparsovatelný string vyhodí `InvalidArgumentException`.
+
+!!! warning "Čísla jsou milisekundy, ne sekundy"
+    Čísla se nikdy nepřepočítávají, takže `since: time()` neskončí chybou — jen
+    dostanete okno začínající v lednu 1970, tedy prázdný nebo nepoužitelný
+    rozsah. Použijte `time() * 1000`, nebo předejte `DateTimeImmutable` a nechte
+    převod na SDK. V odpovědích jsou hodnoty taky v milisekundách:
+    `$candle['start']` je potřeba před `date()` vydělit tisícem.
+
+    Stejný převod je k dispozici i samostatně přes
+    `RevolutX\Helpers\TimestampConverter::toMilliseconds()`.
+
+### Hodnoty přicházející z requestu
+
+Vstup od uživatele si převeďte sami, místo abyste posílali dál surový string —
+parser v SDK je pohodlí, ne validační vrstva:
+
+```php
+use RevolutX\Types\Interval;
+
+$userTz = new DateTimeZone('Europe/Prague');
+$raw = trim($_GET['from'] ?? '');          // např. '2024-01-01' z <input type="date">
+
+if ($raw !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) !== 1) {
+    http_response_code(400);
+    exit(json_encode(['error' => 'from must be YYYY-MM-DD']));
+}
+
+// Midnight v zóně *uživatele*, ne v UTC.
+$since = $raw === '' ? null : new DateTimeImmutable("{$raw} 00:00:00", $userTz);
+
+$candles = $client->getCandles('BTC-EUR', Interval::H1, since: $since);
+```
+
+Čtyři věci, které kousnou, když hodnota přiteče přímo z prohlížeče:
+
+- **String bez offsetu je UTC.** `'2024-01-01'` je UTC midnight, ale uživatel
+  v Praze, který vybral 1. ledna, myslí 31. prosince 23:00 UTC. Hranici proto
+  postavte v jeho zóně a předejte `DateTimeImmutable` jako výše.
+  Z JavaScriptu jsou jednoznačné `d.getTime()` (milisekundy) i `d.toISOString()`
+  (nese `Z`); `'2024-01-01T13:30'` z `<input type="datetime-local">`
+  jednoznačné **není** — nemá offset, takže se přečte jako UTC.
+- **Datum se lomítky je americké.** `DateTimeImmutable` čte `'01/02/2024'` jako
+  2. ledna, takže uživatel, který myslel 1. února, dostane jiný den — a bez
+  jakékoli chyby. Trvejte na `YYYY-MM-DD`.
+- **Nevyplněné pole je prázdný string, ne chybějící hodnota.** HTML formulář
+  pošle `?from=` i u nedotčeného inputu a `''` vyhodí
+  `InvalidArgumentException` — proto jsou v příkladu kontroly na `=== ''`.
+- **Datum bez oddělovačů se odmítne, nehádá se.** `'2024'` a `'20240101'`
+  vyhodí výjimku místo toho, aby skončily v roce 1970, protože krátká řada
+  číslic je mezi datem a timestampem nerozhodnutelná. Za milisekundy se berou
+  až 12+ číslic.
+
+Projdou i relativní výrazy jako `'-7 days'` nebo `'now'`, což je další důvod
+ukotvit povolený tvar na hranici aplikace a nepouštět dovnitř libovolné stringy
+z requestu.

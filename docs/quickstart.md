@@ -72,3 +72,4 @@ When creating an instance of `Client`, the following constructor parameters are 
 | `requestDelay` | `float` | `0.85` | Minimum delay in seconds between requests (rate-limit prevention). |
 | `timeout` | `int` | `15` | cURL request timeout in seconds. |
 | `maxRetries` | `int` | `3` | Maximum automatic retries on HTTP 429 and 5xx errors. |
+| `maxRetryWait` | `float` | `30.0` | Hard ceiling in seconds for a single 429 wait. Lower it in request-scoped code so a rate-limited call fails fast instead of sitting in a retry. |

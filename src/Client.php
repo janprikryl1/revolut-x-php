@@ -31,6 +31,9 @@ class Client
      * @param float $requestDelay Minimum delay between HTTP requests in seconds (default: 0.85).
      * @param int $timeout cURL request timeout in seconds (default: 15).
      * @param int $maxRetries Maximum retry attempts on 429/5xx (default: 3).
+     * @param float $maxRetryWait Hard ceiling in seconds for a single 429 wait
+     *        (default: 30.0). Lower it in request-scoped code — a web request
+     *        should fail fast rather than sit in a retry.
      * @param int $timestampOffsetMs Clock offset in milliseconds for request signing (default: 0).
      */
     public function __construct(
@@ -42,6 +45,7 @@ class Client
         float $requestDelay = 0.85,
         int $timeout = 15,
         int $maxRetries = 3,
+        float $maxRetryWait = 30.0,
         int $timestampOffsetMs = 0
     ) {
         $secretKey = null;
@@ -60,6 +64,7 @@ class Client
             requestDelay: $requestDelay,
             timeout: $timeout,
             maxRetries: $maxRetries,
+            maxRetryWait: $maxRetryWait,
             timestampOffsetMs: $timestampOffsetMs
         );
     }

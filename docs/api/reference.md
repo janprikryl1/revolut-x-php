@@ -17,7 +17,9 @@ public function __construct(
     string $apiVersion = '1.0',
     float $requestDelay = 0.85,
     int $timeout = 15,
-    int $maxRetries = 3
+    int $maxRetries = 3,
+    float $maxRetryWait = 30.0,
+    int $timestampOffsetMs = 0
 )
 ```
 
@@ -28,7 +30,7 @@ public function __construct(
 - `getTickers(): array` — Returns current tickers for all trading pairs.
 - `getTicker(string $symbol): array` — Returns current ticker for a specific pair.
 - `getOrderBook(string $symbol, int $depth = 10): array` — Returns order book bids and asks.
-- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Returns OHLCV candles. `start`/`since`/`until` are Unix **milliseconds** and buckets are **UTC-aligned**; without bounds at most 1000 candles are returned and the newest one is still forming. See [Market Data](../guide/market_data.md#time-handling-read-this-before-building-a-today-report).
+- `getCandles(string $symbol, int $interval = Interval::H1, int|float|string|DateTimeInterface|null $since = null, int|float|string|DateTimeInterface|null $until = null): array` — Returns OHLCV candles, at most 1000. Time bounds accept milliseconds, a `DateTimeInterface`, or a date string. Buckets are **UTC-aligned** and the newest candle is still forming — see [Market Data](../guide/market_data.md#time-ranges-two-things-to-know-first).
 - `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Returns public trade history.
 
 ### Order Management (`OrdersTrait`)
@@ -68,6 +70,7 @@ public function __construct(
 - **`FeeCalculator`**: `calculate(string $side, mixed $price, bool $isMaker, mixed $baseSize = null, mixed $quoteSize = null): FeeEstimate`
 - **`OrderPayloadBuilder`**: Order payload validation and JSON payload construction.
 - **`SymbolNormalizer`**: Symbol format normalization (`BTC/EUR` $\rightarrow$ `BTC-EUR`).
+- **`TimestampConverter`**: `toMilliseconds(int|float|string|DateTimeInterface $value): int` — converts a point in time to Unix milliseconds; strings without an offset are read as UTC.
 
 ---
 
