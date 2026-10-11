@@ -23,8 +23,18 @@ class HttpClient
     private float $requestDelay;
     private int $timeout;
     private int $maxRetries;
+    private float $maxRetryWait;
     private float $lastRequestTime = 0.0;
 
+    /**
+     * Fallback wait in milliseconds when a 429 carries no 'retry-after'.
+     */
+    private const DEFAULT_RETRY_AFTER_MS = 2000.0;
+
+    /**
+     * @param float $maxRetryWait Hard ceiling in seconds for a single 429 wait,
+     *        so one rate-limited call can never pin the process for minutes.
+     */
     public function __construct(
         string $baseUrl = 'https://revx.revolut.com/api',
         string $apiVersion = '1.0',
@@ -32,7 +42,8 @@ class HttpClient
         ?string $secretKey = null,
         float $requestDelay = 0.85,
         int $timeout = 15,
-        int $maxRetries = 3
+        int $maxRetries = 3,
+        float $maxRetryWait = 30.0
     ) {
         $this->baseUrl = rtrim($baseUrl, '/');
         $this->apiVersion = trim($apiVersion, '/');
@@ -41,6 +52,7 @@ class HttpClient
         $this->requestDelay = $requestDelay;
         $this->timeout = $timeout;
         $this->maxRetries = $maxRetries;
+        $this->maxRetryWait = max($maxRetryWait, 1.0);
     }
 
     public function isAuthenticated(): bool
@@ -175,14 +187,14 @@ class HttpClient
 
             // Handle 429 Too Many Requests
             if ($httpCode === 429) {
-                $retryAfter = $this->extractRetryAfter($rawHeaders) ?? 1;
+                $waitSeconds = $this->retryAfterSeconds($rawHeaders);
                 if ($attempt <= $this->maxRetries) {
-                    sleep($retryAfter);
+                    usleep((int) ($waitSeconds * 1000000));
                     continue;
                 }
                 throw new RateLimitException(
                     "Rate limit exceeded after {$this->maxRetries} retries.",
-                    $retryAfter
+                    (int) ceil($waitSeconds)
                 );
             }
 
@@ -220,10 +232,30 @@ class HttpClient
         }
     }
 
-    private function extractRetryAfter(string $headers): ?int
+    /**
+     * How long to wait after a 429, in seconds.
+     *
+     * Revolut X sends 'retry-after' in **milliseconds**, not in the seconds the
+     * HTTP spec prescribes — observed values are 600–900 for a window that
+     * clears in about a second.  Reading them as seconds turned a single 429
+     * into a 14-minute `sleep()`, long enough for PHP to kill the request with
+     * 'Maximum execution time exceeded' and, under FPM, to pin a worker.
+     *
+     * The result is floored at one second (the spacing the venue expects) and
+     * capped at $maxRetryWait, so a server that one day starts sending
+     * spec-compliant seconds cannot hang the caller either.
+     */
+    protected function retryAfterSeconds(string $headers): float
+    {
+        $milliseconds = $this->extractRetryAfter($headers) ?? self::DEFAULT_RETRY_AFTER_MS;
+
+        return min(max($milliseconds / 1000.0, 1.0), $this->maxRetryWait);
+    }
+
+    private function extractRetryAfter(string $headers): ?float
     {
         if (preg_match('/^retry-after:\s*(\d+)/im', $headers, $matches)) {
-            return (int) $matches[1];
+            return (float) $matches[1];
         }
         return null;
     }

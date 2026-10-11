@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace RevolutX\Market;
 
+use DateTimeInterface;
 use InvalidArgumentException;
 use RevolutX\Helpers\SymbolNormalizer;
+use RevolutX\Helpers\TimestampConverter;
 use RevolutX\Types\Interval;
 
 trait MarketTrait
@@ -134,23 +136,30 @@ trait MarketTrait
      *
      * @param string $symbol Trading pair (e.g. 'BTC-EUR').
      * @param int $interval Interval in minutes (default: 60).
-     * @param int|null $since Start time as Unix timestamp in milliseconds.
-     * @param int|null $until End time as Unix timestamp in milliseconds.
+     * @param int|float|string|DateTimeInterface|null $since Start time — a Unix
+     *        timestamp in **milliseconds**, a DateTimeInterface, or a date
+     *        string (see {@see TimestampConverter::toMilliseconds()}).
+     * @param int|float|string|DateTimeInterface|null $until End time, in the
+     *        same formats as $since.
      * @return list<array<string, mixed>>
+     *
+     * @throws InvalidArgumentException If a time bound cannot be converted.
      */
     public function getCandles(
         string $symbol,
         int $interval = Interval::H1,
-        ?int $since = null,
-        ?int $until = null
+        int|float|string|DateTimeInterface|null $since = null,
+        int|float|string|DateTimeInterface|null $until = null
     ): array {
         $apiSymbol = SymbolNormalizer::normalize($symbol);
         $params = ['interval' => $interval];
-        if ($since !== null) {
-            $params['since'] = $since;
+        $sinceMs = TimestampConverter::toMillisecondsOrNull($since);
+        $untilMs = TimestampConverter::toMillisecondsOrNull($until);
+        if ($sinceMs !== null) {
+            $params['since'] = $sinceMs;
         }
-        if ($until !== null) {
-            $params['until'] = $until;
+        if ($untilMs !== null) {
+            $params['until'] = $untilMs;
         }
 
         $data = $this->http->request('GET', "/public/candles/{$apiSymbol}", $params);

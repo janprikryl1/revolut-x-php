@@ -68,3 +68,4 @@ Při vytváření instance `Client` lze přizpůsobit následující volby:
 | `requestDelay` | `float` | `0.85` | Minimální prodleva mezi požadavky v sekundách (ochrana před rate-limitem). |
 | `timeout` | `int` | `15` | Timeout pro cURL v sekundách. |
 | `maxRetries` | `int` | `3` | Maximální počet opakování při chybách 429 a 5xx. |
+| `maxRetryWait` | `float` | `30.0` | Tvrdý strop v sekundách pro jedno čekání po 429. Ve webovém requestu ho snižte, ať volání spadne rychle místo čekání v retry. |

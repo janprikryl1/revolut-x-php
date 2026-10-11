@@ -17,7 +17,8 @@ public function __construct(
     string $apiVersion = '1.0',
     float $requestDelay = 0.85,
     int $timeout = 15,
-    int $maxRetries = 3
+    int $maxRetries = 3,
+    float $maxRetryWait = 30.0
 )
 ```
 
@@ -28,7 +29,7 @@ public function __construct(
 - `getTickers(): array` — Aktuální tickery všech párů.
 - `getTicker(string $symbol): array` — Aktuální ticker zvoleného páru.
 - `getOrderBook(string $symbol, int $depth = 10): array` — Kniha objednávek.
-- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Svíčky OHLCV.
+- `getCandles(string $symbol, int $interval = Interval::H1, int|float|string|DateTimeInterface|null $since = null, int|float|string|DateTimeInterface|null $until = null): array` — Svíčky OHLCV. Časové hranice přijímají milisekundy, `DateTimeInterface` nebo datum jako string.
 - `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Veřejné obchody.
 
 ### Správa objednávek (`OrdersTrait`)
@@ -68,6 +69,7 @@ public function __construct(
 - **`FeeCalculator`**: `calculate(string $side, mixed $price, bool $isMaker, mixed $baseSize = null, mixed $quoteSize = null): FeeEstimate`
 - **`OrderPayloadBuilder`**: Sestavování a validace JSON payloadů objednávek.
 - **`SymbolNormalizer`**: Normalizace názvů párů (`BTC/EUR` $\rightarrow$ `BTC-EUR`).
+- **`TimestampConverter`**: `toMilliseconds(int|float|string|DateTimeInterface $value): int` — převod času na Unix milisekundy; stringy bez offsetu se chápou jako UTC.
 
 ---
 
