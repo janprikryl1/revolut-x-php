@@ -28,7 +28,7 @@ public function __construct(
 - `getTickers(): array` — Aktuální tickery všech párů.
 - `getTicker(string $symbol): array` — Aktuální ticker zvoleného páru.
 - `getOrderBook(string $symbol, int $depth = 10): array` — Kniha objednávek.
-- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Svíčky OHLCV.
+- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Svíčky OHLCV. `start`/`since`/`until` jsou unixové časy v **milisekundách** a svíčky jsou zarovnané na **UTC**; bez omezení se vrací max. 1000 svíček a poslední z nich se ještě tvoří. Viz [Tržní data](../guide/market_data.md#prace-s-casem-prectete-si-pred-stavbou-dnesniho-prehledu).
 - `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Veřejné obchody.
 
 ### Správa objednávek (`OrdersTrait`)

@@ -113,7 +113,7 @@ $allTickers = $client->getTickers();
 $book = $client->getOrderBook('BTC-EUR', depth: 10);
 // Returns ['bids' => [['76000.00', '0.50'], ...], 'asks' => [...]]
 
-// 4. Candlesticks (OHLCV)
+// 4. Candlesticks (OHLCV) — see "Candle Time Semantics" below before writing date logic
 $candles = $client->getCandles('BTC-EUR', interval: Interval::HOUR_1);
 
 // 5. Public recent trades
@@ -123,6 +123,52 @@ $trades = $client->getTrades('BTC-EUR', limit: 50);
 $pairs = $client->getPairs();
 $btcRules = $client->getPair('BTC-EUR');
 echo "Min order size: {$btcRules['min_order_size']}\n";
+```
+
+### Candle Time Semantics (`getCandles`)
+
+**Important — get this right whenever the user asks for candles over a date range
+("today", "yesterday", "this week"). These rules are verified against the live API.**
+
+- `start` (in the response) and the `since` / `until` parameters are Unix timestamps
+  in **milliseconds**, not seconds.
+- **Candle buckets are aligned to UTC, not to the local timezone.** With
+  `Interval::D1` the daily bucket opens at `00:00` UTC (= `01:00` in `Europe/Prague`),
+  so a candle covering a *local* calendar day does not exist. Taking "today midnight"
+  in UTC vs. in `UTC+2` selects two different, both-correct sets of candles — so
+  **ask or state explicitly which timezone the day boundary uses**, and label the
+  output with that timezone. Do not silently rely on `date_default_timezone_get()`.
+- **The newest candle is not closed yet.** Its `close`/`high`/`low`/`volume` keep
+  changing until the interval ends, so two runs minutes apart legitimately return
+  different numbers for the same `start`. If results "don't match", check this first
+  before suspecting a bug.
+- **Passing both `since` and `until` returns only closed candles** — the forming one
+  is excluded. Prefer this for any report or summary. Pass `since` alone when the live
+  unfinished candle *is* wanted (ticker-style display).
+- **Without `since`/`until` the endpoint returns at most 1000 candles.** Fetching
+  unbounded and filtering in PHP is fine for `H1`/`D1` but silently truncates for
+  `M1` (`1000 × 1m ≈ 16.7 h`), losing the morning after roughly `16:40` local time.
+  Always bound the request instead.
+
+```php
+use RevolutX\Types\Interval;
+
+$interval = Interval::H1;
+$tz       = new DateTimeZone('Europe/Prague'); // explicit, not the PHP default
+
+$candles = $client->getCandles(
+    'BTC-EUR',
+    interval: $interval,
+    since: (new DateTimeImmutable('today midnight', $tz))->getTimestamp() * 1000,
+    until: (new DateTimeImmutable('tomorrow midnight', $tz))->getTimestamp() * 1000
+);
+
+foreach ($candles as $c) {
+    $time = (new DateTimeImmutable('@' . intdiv((int) $c['start'], 1000)))
+        ->setTimezone($tz)
+        ->format('Y-m-d H:i');
+    echo "{$time} | O: {$c['open']} | H: {$c['high']} | L: {$c['low']} | C: {$c['close']}\n";
+}
 ```
 
 ---

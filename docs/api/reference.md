@@ -28,7 +28,7 @@ public function __construct(
 - `getTickers(): array` — Returns current tickers for all trading pairs.
 - `getTicker(string $symbol): array` — Returns current ticker for a specific pair.
 - `getOrderBook(string $symbol, int $depth = 10): array` — Returns order book bids and asks.
-- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Returns OHLCV candles.
+- `getCandles(string $symbol, int $interval = Interval::H1, ?int $since = null, ?int $until = null): array` — Returns OHLCV candles. `start`/`since`/`until` are Unix **milliseconds** and buckets are **UTC-aligned**; without bounds at most 1000 candles are returned and the newest one is still forming. See [Market Data](../guide/market_data.md#time-handling-read-this-before-building-a-today-report).
 - `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Returns public trade history.
 
 ### Order Management (`OrdersTrait`)
