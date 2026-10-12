@@ -31,7 +31,7 @@ public function __construct(
 - `getTicker(string $symbol): array` — Aktuální ticker zvoleného páru.
 - `getOrderBook(string $symbol, int $depth = 10): array` — Kniha objednávek.
 - `getCandles(string $symbol, int $interval = Interval::H1, int|float|string|DateTimeInterface|null $since = null, int|float|string|DateTimeInterface|null $until = null): array` — Svíčky OHLCV, maximálně 1000. Časové hranice přijímají milisekundy, `DateTimeInterface` nebo datum jako string. Svíčky jsou zarovnané na **UTC** a nejnovější se ještě tvoří — viz [Tržní data](../guide/market_data.md#prace-s-casem-dve-veci-ktere-je-potreba-vedet).
-- `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Veřejné obchody.
+- `getTrades(string $symbol, int $limit = 100, int|float|string|DateTimeInterface|null $startDate = null, int|float|string|DateTimeInterface|null $endDate = null, ?string $cursor = null): array` — Jedna stránka veřejných obchodů ve formátu `['trades' => [...], 'next_cursor' => ?string]`. `$limit` je ořezán na rozsah 1–100, který burza přijímá; další stránky se načítají podle `next_cursor`. Časové hranice přijímají milisekundy, `DateTimeInterface` nebo datum jako string.
 
 ### Správa objednávek (`OrdersTrait`)
 - `placeOrder(string|array $symbolOrPayload, ?string $side = null, string $orderType = OrderType::MARKET, ...): array` — Univerzální odeslání objednávky.

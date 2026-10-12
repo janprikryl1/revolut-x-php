@@ -35,6 +35,24 @@ echo "Bid: {$ticker['bid']} EUR | Ask: {$ticker['ask']} EUR | Last: {$ticker['la
 $allTickers = $client->getTickers();
 ```
 
+!!! note "One ticker per pair *and* region"
+    `getTickers()` returns a row for every pair/region combination, not one per
+    pair — most symbols are quoted in both `EEA` and `UK` at different prices
+    and volumes, so they appear twice. Read `$t['region']` to tell them apart,
+    and do not rely on the order of the list: the exchange reshuffles it between
+    calls.
+
+    `getTicker()` resolves that ambiguity by returning the **most liquid** quote
+    for the symbol (highest `volume_24h`). If you need a specific region, filter
+    `getTickers()` yourself:
+
+    ```php
+    $uk = array_values(array_filter(
+        $client->getTickers(),
+        fn(array $t): bool => $t['symbol'] === 'RAD/USD' && $t['region'] === 'UK'
+    ))[0];
+    ```
+
 ---
 
 ## 3. Order Book Depth

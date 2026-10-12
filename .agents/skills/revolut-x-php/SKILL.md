@@ -118,8 +118,10 @@ $book = $client->getOrderBook('BTC-EUR', depth: 10);
 // 4. Candlesticks (OHLCV) — see "Candle Time Semantics" below before writing date logic
 $candles = $client->getCandles('BTC-EUR', interval: Interval::HOUR_1);
 
-// 5. Public recent trades
-$trades = $client->getTrades('BTC-EUR', limit: 50);
+// 5. Public recent trades — one page of max 100, paginated by cursor
+$page = $client->getTrades('BTC-EUR', limit: 50);
+$trades = $page['trades'];
+$next = $page['next_cursor'];   // pass back as $cursor for the following page
 
 // 6. Instrument pair configurations & rules
 $pairs = $client->getPairs();

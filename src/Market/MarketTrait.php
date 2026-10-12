@@ -72,7 +72,34 @@ trait MarketTrait
     }
 
     /**
+     * Order two quotes for the same symbol, most liquid first.
+     *
+     * 24-hour base volume decides; a missing or non-numeric volume ranks below
+     * any usable one. The region name breaks an exact tie, keeping the choice
+     * deterministic even when both venues report the same volume (notably 0 on
+     * an untraded pair).
+     *
+     * @param array<string, mixed> $a
+     * @param array<string, mixed> $b
+     */
+    private static function compareLiquidity(array $a, array $b): int
+    {
+        $rawA = $a['volume_24h'] ?? null;
+        $rawB = $b['volume_24h'] ?? null;
+        $volumeA = is_numeric($rawA) ? (float)$rawA : -1.0;
+        $volumeB = is_numeric($rawB) ? (float)$rawB : -1.0;
+
+        return ($volumeB <=> $volumeA)
+            ?: strcmp((string)($b['region'] ?? ''), (string)($a['region'] ?? ''));
+    }
+
+    /**
      * Retrieve current tickers (best bid, best ask, last price) for all pairs.
+     *
+     * Returns one entry per pair **and region**, not one per pair: most symbols
+     * are quoted in both 'EEA' and 'UK' at different prices and volumes, and so
+     * appear twice. Read ['region'] to tell them apart. The order of the list
+     * is not stable between calls.
      *
      * @return list<array<string, mixed>>
      */
@@ -88,6 +115,14 @@ trait MarketTrait
     /**
      * Retrieve the current ticker for a specific trading pair.
      *
+     * Most symbols are quoted in more than one region ('EEA' and 'UK') at
+     * different prices and volumes. Because /public/tickers returns them in an
+     * order that changes between calls, picking the first match would hand back
+     * a different region — and so a different price — on each call. This method
+     * therefore returns the **most liquid** quote: the match with the highest
+     * volume_24h, with the region name breaking an exact tie. To work with a
+     * specific region, filter getTickers() on ['region'] yourself.
+     *
      * @param string $symbol Trading pair (e.g. 'BTC-EUR').
      * @return array<string, mixed>
      *
@@ -100,13 +135,19 @@ trait MarketTrait
         $targetSlash = strtoupper(str_replace('-', '/', $symbol));
         $targetDash = strtoupper(str_replace('/', '-', $symbol));
 
+        $matches = [];
         foreach ($tickers as $t) {
             if (is_array($t) && isset($t['symbol'])) {
                 $sym = strtoupper((string)$t['symbol']);
                 if ($sym === $targetSlash || $sym === $targetDash) {
-                    return $t;
+                    $matches[] = $t;
                 }
             }
+        }
+
+        if ($matches !== []) {
+            usort($matches, static fn(array $a, array $b): int => self::compareLiquidity($a, $b));
+            return $matches[0];
         }
 
         throw new InvalidArgumentException(
@@ -170,33 +211,64 @@ trait MarketTrait
     }
 
     /**
-     * Fetch the most recent public trades for a trading pair.
+     * Fetch a single page of public trades (up to 100 per request).
+     *
+     * The symbol travels as a query parameter, not in the path: the venue
+     * serves public trades from /public/trades/all and has no per-symbol
+     * public path.
      *
      * @param string $symbol Trading pair (e.g. 'BTC-EUR').
-     * @param int $limit Number of trades (default: 100).
-     * @param string|null $before Cursor to paginate backward.
-     * @param string|null $after Cursor to paginate forward.
-     * @return list<array<string, mixed>>
+     * @param int $limit Page size. The exchange accepts **1–100** and rejects
+     *        anything larger with HTTP 400, so values outside that range are
+     *        clamped into it. To read more than one page, follow next_cursor.
+     * @param int|float|string|DateTimeInterface|null $startDate Start time — a
+     *        Unix timestamp in **milliseconds**, a DateTimeInterface, or a date
+     *        string (see {@see TimestampConverter::toMilliseconds()}).
+     * @param int|float|string|DateTimeInterface|null $endDate End time, in the
+     *        same formats as $startDate.
+     * @param string|null $cursor Pagination cursor from a previous response's
+     *        next_cursor.
+     * @return array{trades: list<array<string, mixed>>, next_cursor: string|null}
+     *
+     * @throws InvalidArgumentException If a time bound cannot be converted.
      */
     public function getTrades(
         string $symbol,
         int $limit = 100,
-        ?string $before = null,
-        ?string $after = null
+        int|float|string|DateTimeInterface|null $startDate = null,
+        int|float|string|DateTimeInterface|null $endDate = null,
+        ?string $cursor = null
     ): array {
-        $apiSymbol = SymbolNormalizer::normalize($symbol);
-        $params = ['limit' => $limit];
-        if ($before !== null) {
-            $params['before'] = $before;
+        $params = [
+            'symbol' => SymbolNormalizer::normalize($symbol),
+            // The venue rejects anything outside 1-100 with HTTP 400.
+            'limit' => max(1, min($limit, 100)),
+        ];
+
+        $startMs = TimestampConverter::toMillisecondsOrNull($startDate);
+        $endMs = TimestampConverter::toMillisecondsOrNull($endDate);
+        if ($startMs !== null) {
+            $params['start_date'] = $startMs;
         }
-        if ($after !== null) {
-            $params['after'] = $after;
+        if ($endMs !== null) {
+            $params['end_date'] = $endMs;
+        }
+        if ($cursor !== null) {
+            $params['cursor'] = $cursor;
         }
 
-        $data = $this->http->request('GET', "/public/trades/{$apiSymbol}", $params);
-        if (is_array($data) && isset($data['data']) && is_array($data['data'])) {
-            return $data['data'];
+        $resp = $this->http->request('GET', '/public/trades/all', $params);
+
+        $trades = [];
+        $nextCursor = null;
+        if (is_array($resp)) {
+            $trades = isset($resp['data']) && is_array($resp['data']) ? $resp['data'] : [];
+            $nextCursor = $resp['metadata']['next_cursor'] ?? null;
         }
-        return is_array($data) ? $data : [];
+
+        return [
+            'trades' => $trades,
+            'next_cursor' => $nextCursor,
+        ];
     }
 }

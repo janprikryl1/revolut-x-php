@@ -31,7 +31,7 @@ public function __construct(
 - `getTicker(string $symbol): array` — Returns current ticker for a specific pair.
 - `getOrderBook(string $symbol, int $depth = 10): array` — Returns order book bids and asks.
 - `getCandles(string $symbol, int $interval = Interval::H1, int|float|string|DateTimeInterface|null $since = null, int|float|string|DateTimeInterface|null $until = null): array` — Returns OHLCV candles, at most 1000. Time bounds accept milliseconds, a `DateTimeInterface`, or a date string. Buckets are **UTC-aligned** and the newest candle is still forming — see [Market Data](../guide/market_data.md#time-ranges-two-things-to-know-first).
-- `getTrades(string $symbol, int $limit = 100, ?string $before = null, ?string $after = null): array` — Returns public trade history.
+- `getTrades(string $symbol, int $limit = 100, int|float|string|DateTimeInterface|null $startDate = null, int|float|string|DateTimeInterface|null $endDate = null, ?string $cursor = null): array` — Returns one page of public trades as `['trades' => [...], 'next_cursor' => ?string]`. `$limit` is clamped to the 1–100 the venue accepts; follow `next_cursor` for further pages. Time bounds accept milliseconds, a `DateTimeInterface`, or a date string.
 
 ### Order Management (`OrdersTrait`)
 - `placeOrder(string|array $symbolOrPayload, ?string $side = null, string $orderType = OrderType::MARKET, ...): array` — Generic order placement.

@@ -35,6 +35,23 @@ echo "Bid: {$ticker['bid']} EUR | Ask: {$ticker['ask']} EUR\n";
 $allTickers = $client->getTickers();
 ```
 
+!!! note "Jeden ticker na pár *a region*"
+    `getTickers()` vrací řádek pro každou kombinaci páru a regionu, nikoli jeden
+    na pár — většina symbolů je kotována v `EEA` i `UK` za odlišné ceny a
+    objemy, takže se v seznamu objeví dvakrát. Region poznáte z `$t['region']`
+    a nespoléhejte se na pořadí seznamu: burza ho mezi voláními přehazuje.
+
+    `getTicker()` tuto nejednoznačnost řeší tím, že vrátí **nejlikvidnější**
+    kotaci daného symbolu (nejvyšší `volume_24h`). Pokud potřebujete konkrétní
+    region, vyfiltrujte si ho sami:
+
+    ```php
+    $uk = array_values(array_filter(
+        $client->getTickers(),
+        fn(array $t): bool => $t['symbol'] === 'RAD/USD' && $t['region'] === 'UK'
+    ))[0];
+    ```
+
 ---
 
 ## 3. Kniha objednávek (Order Book)
