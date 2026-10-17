@@ -114,34 +114,34 @@ $order = $client->placeMakerOrder(
 
 ## Releasing a New Version
 
-Vydávání nových verzí balíčku je automatizováno pomocí GitHub Actions workflow (**Release New Version**):
+Releasing new package versions is automated using the GitHub Actions workflow (**Release New Version**):
 
-1. V GitHub repozitáři přejděte do záložky **Actions**.
-2. V levém menu zvolte **Release New Version**.
-3. Klikněte na tlačítko **Run workflow**:
-   - **Typ navýšení verze (`bump_type`)**:
-     - `patch` (výchozí) — např. `v1.1.0` $\rightarrow$ `v1.1.1` (opravy chyb, refaktoring)
-     - `minor` — např. `v1.1.0` $\rightarrow$ `v1.2.0` (nové funkce, zpětně kompatibilní)
-     - `major` — např. `v1.1.0` $\rightarrow$ `v2.0.0` (breaking changes)
-     - `custom` — zadání vlastního tagu do pole `custom_tag` (např. `v1.1.1-beta`)
-   - **Test nanečisto (`dry_run`)**: zaškrtněte, pokud chcete pouze ověřit průběh testů a výpočet verze bez vytvoření tagu.
-4. Klikněte na zelené tlačítko **Run workflow**.
+1. Go to the **Actions** tab in the GitHub repository.
+2. In the left sidebar, select **Release New Version**.
+3. Click the **Run workflow** button:
+   - **Version bump type (`bump_type`)**:
+     - `patch` (default) — e.g. `v1.1.0` $\rightarrow$ `v1.1.1` (bug fixes, maintenance)
+     - `minor` — e.g. `v1.1.0` $\rightarrow$ `v1.2.0` (new features, backward-compatible)
+     - `major` — e.g. `v1.1.0` $\rightarrow$ `v2.0.0` (breaking changes)
+     - `custom` — enter a specific tag in the `custom_tag` field (e.g. `v1.1.1-beta`)
+   - **Dry run (`dry_run`)**: check this option to verify tests and preview version calculation without creating a git tag or release.
+4. Click the green **Run workflow** button.
 
-Workflow automaticky:
-- Nainstaluje závislosti a spustí **PHPUnit testy** (pokud selžou, release se nevytvoří).
-- Vypočítá další verzi a vytvoří odpovídající **Git tag** (např. `v1.1.1`).
-- Vytvoří **GitHub Release** včetně vygenerovaného přehledu změn z commitů.
-- Packagist na základě webhooku automaticky publikuje novou verzi balíčku.
+The workflow automatically:
+- Installs dependencies and runs **PHPUnit tests** (the release aborts if any test fails).
+- Determines the next version and creates the corresponding **Git tag** (e.g. `v1.1.1`).
+- Publishes a **GitHub Release** with auto-generated release notes from commits.
+- Triggers Packagist to publish the updated version via webhook.
 
 ---
 
 ## Academic Reference
 
-Tato knihovna vznikla jako součást **diplomové práce** na **VŠB – Technické univerzitě Ostrava** (Fakulta elektrotechniky a informatiky).
+This library was developed as part of a **Master's thesis** at **VŠB – Technical University of Ostrava** (Faculty of Electrical Engineering and Computer Science).
 
-- **Autor**: Bc. Jan Přikryl
-- **Univerzita**: VŠB – Technická univerzita Ostrava
-- **Fakulta**: Fakulta elektrotechniky a informatiky (FEI)
+- **Author**: Bc. Jan Přikryl
+- **University**: VŠB – Technical University of Ostrava
+- **Faculty**: Faculty of Electrical Engineering and Computer Science (FEI)
 
 ---
 
