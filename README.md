@@ -112,13 +112,36 @@ $order = $client->placeMakerOrder(
 
 ---
 
+## Releasing a New Version
+
+Releasing new package versions is automated using the GitHub Actions workflow (**Release New Version**):
+
+1. Go to the **Actions** tab in the GitHub repository.
+2. In the left sidebar, select **Release New Version**.
+3. Click the **Run workflow** button:
+   - **Version bump type (`bump_type`)**:
+     - `patch` (default) — e.g. `v1.1.0` $\rightarrow$ `v1.1.1` (bug fixes, maintenance)
+     - `minor` — e.g. `v1.1.0` $\rightarrow$ `v1.2.0` (new features, backward-compatible)
+     - `major` — e.g. `v1.1.0` $\rightarrow$ `v2.0.0` (breaking changes)
+     - `custom` — enter a specific tag in the `custom_tag` field (e.g. `v1.1.1-beta`)
+   - **Dry run (`dry_run`)**: check this option to verify tests and preview version calculation without creating a git tag or release.
+4. Click the green **Run workflow** button.
+
+The workflow automatically:
+- Installs dependencies and runs **PHPUnit tests** (the release aborts if any test fails).
+- Determines the next version and creates the corresponding **Git tag** (e.g. `v1.1.1`).
+- Publishes a **GitHub Release** with auto-generated release notes from commits.
+- Triggers Packagist to publish the updated version via webhook.
+
+---
+
 ## Academic Reference
 
-Tato knihovna vznikla jako součást **diplomové práce** na **VŠB – Technické univerzitě Ostrava** (Fakulta elektrotechniky a informatiky).
+This library was developed as part of a **Master's thesis** at **VŠB – Technical University of Ostrava** (Faculty of Electrical Engineering and Computer Science).
 
-- **Autor**: Bc. Jan Přikryl
-- **Univerzita**: VŠB – Technická univerzita Ostrava
-- **Fakulta**: Fakulta elektrotechniky a informatiky (FEI)
+- **Author**: Bc. Jan Přikryl
+- **University**: VŠB – Technical University of Ostrava
+- **Faculty**: Faculty of Electrical Engineering and Computer Science (FEI)
 
 ---
 
