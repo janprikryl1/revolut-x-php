@@ -124,12 +124,11 @@ Releasing new package versions is automated using the GitHub Actions workflow (*
      - `minor` — e.g. `v1.1.0` $\rightarrow$ `v1.2.0` (new features, backward-compatible)
      - `major` — e.g. `v1.1.0` $\rightarrow$ `v2.0.0` (breaking changes)
      - `custom` — enter a specific tag in the `custom_tag` field (e.g. `v1.1.1-beta`)
-   - **Dry run (`dry_run`)**: check this option to verify tests and preview version calculation without creating a git tag or release.
+   - **Dry run (`dry_run`)**: check this option to preview version calculation without creating a git tag or release.
 4. Click the green **Run workflow** button.
 
 The workflow automatically:
-- Installs dependencies and runs **PHPUnit tests** (the release aborts if any test fails).
-- Determines the next version and creates the corresponding **Git tag** (e.g. `v1.1.1`).
+- Determines the next version based on previous tags and creates the corresponding **Git tag** (e.g. `v1.1.1`).
 - Publishes a **GitHub Release** with auto-generated release notes from commits.
 - Triggers Packagist to publish the updated version via webhook.
 
