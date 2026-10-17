@@ -112,6 +112,29 @@ $order = $client->placeMakerOrder(
 
 ---
 
+## Releasing a New Version
+
+Vydávání nových verzí balíčku je automatizováno pomocí GitHub Actions workflow (**Release New Version**):
+
+1. V GitHub repozitáři přejděte do záložky **Actions**.
+2. V levém menu zvolte **Release New Version**.
+3. Klikněte na tlačítko **Run workflow**:
+   - **Typ navýšení verze (`bump_type`)**:
+     - `patch` (výchozí) — např. `v1.1.0` $\rightarrow$ `v1.1.1` (opravy chyb, refaktoring)
+     - `minor` — např. `v1.1.0` $\rightarrow$ `v1.2.0` (nové funkce, zpětně kompatibilní)
+     - `major` — např. `v1.1.0` $\rightarrow$ `v2.0.0` (breaking changes)
+     - `custom` — zadání vlastního tagu do pole `custom_tag` (např. `v1.1.1-beta`)
+   - **Test nanečisto (`dry_run`)**: zaškrtněte, pokud chcete pouze ověřit průběh testů a výpočet verze bez vytvoření tagu.
+4. Klikněte na zelené tlačítko **Run workflow**.
+
+Workflow automaticky:
+- Nainstaluje závislosti a spustí **PHPUnit testy** (pokud selžou, release se nevytvoří).
+- Vypočítá další verzi a vytvoří odpovídající **Git tag** (např. `v1.1.1`).
+- Vytvoří **GitHub Release** včetně vygenerovaného přehledu změn z commitů.
+- Packagist na základě webhooku automaticky publikuje novou verzi balíčku.
+
+---
+
 ## Academic Reference
 
 Tato knihovna vznikla jako součást **diplomové práce** na **VŠB – Technické univerzitě Ostrava** (Fakulta elektrotechniky a informatiky).
