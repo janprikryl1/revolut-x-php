@@ -19,7 +19,7 @@ on:
         type: string
         default: ''
       dry_run:
-        description: 'Test nanečisto (pouze zkontroluje verzi a testy, nevytvoří tag)'
+        description: 'Test nanečisto (pouze spočítá a ověří verzi, nevytvoří tag)'
         required: false
         type: boolean
         default: false
@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   release:
-    name: Test and Release
+    name: Create Release
     runs-on: ubuntu-latest
 
     steps:
@@ -37,19 +37,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.0'
-          extensions: curl, json, sodium
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
-
-      - name: Run PHPUnit tests
-        run: vendor/bin/phpunit
 
       - name: Determine next version
         id: version
