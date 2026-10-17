@@ -1,0 +1,128 @@
+name: Release New Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Typ navýšení verze'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      custom_tag:
+        description: 'Vlastní tag (použije se pouze při volbě "custom", např. v1.2.0)'
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: 'Test nanečisto (pouze zkontroluje verzi a testy, nevytvoří tag)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Test and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: curl, json, sodium
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit
+
+      - name: Determine next version
+        id: version
+        shell: python
+        run: |
+          import os
+          import re
+          import subprocess
+          import sys
+
+          bump = "${{ github.event.inputs.bump_type }}"
+          custom_tag = "${{ github.event.inputs.custom_tag }}".strip()
+
+          if bump == "custom":
+              if not custom_tag:
+                  print("::error::Byla zvolena možnost 'custom', ale nebyl zadán žádný 'custom_tag'!", file=sys.stderr)
+                  sys.exit(1)
+              tag = custom_tag if custom_tag.startswith("v") else f"v{custom_tag}"
+              if not re.match(r"^v\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$", tag):
+                  print(f"::error::Neplatný formát verze: {custom_tag}. Očekává se např. v1.2.0", file=sys.stderr)
+                  sys.exit(1)
+          else:
+              raw_tags = subprocess.check_output(["git", "tag", "-l"], text=True).strip().splitlines()
+              parsed = []
+              for t in raw_tags:
+                  m = re.match(r"^v?(\d+)\.(\d+)\.(\d+)$", t.strip())
+                  if m:
+                      parsed.append((int(m.group(1)), int(m.group(2)), int(m.group(3))))
+
+              if not parsed:
+                  latest = (0, 0, 0)
+              else:
+                  parsed.sort()
+                  latest = parsed[-1]
+
+              major, minor, patch = latest
+              if bump == "patch":
+                  tag = f"v{major}.{minor}.{patch + 1}"
+              elif bump == "minor":
+                  tag = f"v{major}.{minor + 1}.0"
+              elif bump == "major":
+                  tag = f"v{major + 1}.0.0"
+              else:
+                  print(f"::error::Neznámý typ navýšení: {bump}", file=sys.stderr)
+                  sys.exit(1)
+
+          # Ověření, zda tag již neexistuje
+          existing = subprocess.check_output(["git", "tag", "-l", tag], text=True).strip()
+          if existing:
+              print(f"::error::Tag {tag} již v repozitáři existuje!", file=sys.stderr)
+              sys.exit(1)
+
+          print(f"Nový tag: {tag}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"tag={tag}\n")
+
+      - name: Summary / Dry Run Info
+        run: |
+          echo "### 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cílová verze:** \`${{ steps.version.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Větev:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Typ:** \`${{ github.event.inputs.bump_type }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry Run:** \`${{ github.event.inputs.dry_run }}\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create Git Tag and GitHub Release
+        if: ${{ github.event.inputs.dry_run == 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.version.outputs.tag }}
+        run: |
+          echo "Vytvářím GitHub Release a tag $TAG_NAME..."
+          gh release create "$TAG_NAME" \
+            --target "${{ github.ref_name }}" \
+            --title "$TAG_NAME" \
+            --generate-notes
+          echo "Release $TAG_NAME byl úspěšně vytvořen!" >> $GITHUB_STEP_SUMMARY
